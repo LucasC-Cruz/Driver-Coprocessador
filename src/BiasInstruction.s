@@ -109,8 +109,12 @@ escreve:
     mov r2, #16            @tamanho da saída em bytes
     svc #0
     bx lr
-    
+ 
 
+converte_bin:
+    lsl r8, r10, r3
+    add r0, r8
+    b loop
 
 @Vou considerar para este código o r0, r1, r2, r3, parâmetros para as funções e o r0 também será  utilizado para  receber os retornos das funções
 _start:
@@ -133,16 +137,37 @@ _start:
     mov r7,  #0
     mov r8,  #0
     mov r9,  #0
-    mov r10, #0
+    mov r10, #1
 
     bl open
     bl read
 
-    ldr r1, =ins   
-    ldr r0, [r1, r3]
-    @vamos imprimir na tela primeiro só de saca
+    ldr r1, =ins  
+    mov r3, #15
+
+
+
+
+    @basicamente vamos ler os acii e pegar os bits menos significativos usando alguma função de merda aí
+    @depois atribuiremos a um registrador estes bits
     bl escreve
     b finalizar_sucesso
+
+loop:
+    ldrb r4, [r1, r9]
+    sub r3, r3, #1
+    and r4, r4, #1
+    cmp r4, #1  
+    beq converte_bin
+    cmp r3, #0
+    beq finalizar_sucesso
+
+
+    @uma ideia para converter o ascii para os bits 
+    @ somar
+    @vamos contar as posições do ascii, se eum posição for 1
+    @somamos a um registrador 2^n sendo n a posição dele no "binário"
+
 
 
 
