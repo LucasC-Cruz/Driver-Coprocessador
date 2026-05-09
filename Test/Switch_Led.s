@@ -7,7 +7,7 @@
 .equ PAGINA_TAMANHO,   0x5000
 .equ LWHPS2FPGA_BASE,  0xFF200    @ Base / 4096 (mmap2 usa offset em páginas)
 .equ PROT_READ_WRITE,  0x3
-.equ MAP_SHARED,       0x01
+.equ MAP_SHARED,       0x1
 
 @ Offsets baseados no seu hps_0.h (exemplo comum)
 .equ PIO_LED_BASE,     0x00       @ Ajuste conforme seu hps_0.h
