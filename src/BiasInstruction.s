@@ -8,6 +8,19 @@
 .equ SYSCALL_CLOSE,    6
 .equ SYSCALL_WRITE,    4
 
+.extern mapear
+.extern reset
+.extern iniciar
+.extern status
+.extern resultado
+.extern flag_done
+.extern flag_busy
+.extern flag_error
+.extern enable
+.extern pulso_enable
+.extern fechar
+
+
 .section .bss
     ins: .skip 16     @queria manipular bit a bit porque isto daqui são 4 bytes, correto?
     
