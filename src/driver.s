@@ -41,24 +41,47 @@ mapear:
 
     pop {r4, r5, r7, pc}
 
+@ .global reset
+@ .type reset, %function
+@ reset:
+@     @r0 deve ser o hps_virtual
+@     @r1 deve ser bool
+@     str r1, [r0, #PIO_RESET_COP]
+@     bx lr
+
 .global reset
 .type reset, %function
 reset:
-    @r0 deve ser o hps_virtual
-    @r1 deve ser bool
-    str r1, [r0, #PIO_RESET_COP]
+    mov r1, #1
+    str r1, [r0, #PIO_CLR_OP]
+    mov r1, #0
+    str r1, [r0, #PIO_CLR_OP]
     bx lr
+
+@ .global clear_operation
+@ .type clear_operation, %function
+@ clear_operation:
+@     @r0 deve ser o hps_virtual
+@     @r1 deve ser bool
+@     str r1, [r0, #PIO_CLR_OP]
+@     bx lr
 
 .global clear_operation
 .type clear_operation, %function
 clear_operation:
-    @r0 deve ser o hps_virtual
-    @r1 deve ser bool
+    mov r1, #1
+    str r1, [r0, #PIO_CLR_OP]
+    mov r1, #0
     str r1, [r0, #PIO_CLR_OP]
     bx lr
 
-
-
+.global instrucao
+.type instrucao, %function
+instrucao:
+    @r0 deve ser o hps_virtual
+    @r1 deve ser o opcode
+    str r1, [r0, #PIO_INSTRUCTION]
+    bx lr
 
 .global iniciar
 .type iniciar, %function
@@ -83,6 +106,15 @@ resultado:
     ldr r0, [r0, #PIO_RESULTADO]
     bx lr
 
+.global store
+.type store, %function
+store:
+    @r0 deve ser o hps_virtual  
+    @r1 endereco
+    @r2 dado
+    str r1, [r0, #PIO_INSTRUCTION]
+    bx lr
+
 .global flag_done
 .type flag_done, %function
 flag_done:
@@ -104,22 +136,23 @@ flag_error:
     ldr r0, [r0, #PIO_FLAG_ERROR]
     bx lr
 
-.global enable
-.type enable, %function
-enable:
-    @r0 deve ser o hps_virtual
-    str r1, [r0, #PIO_ENABLE]
-    bx lr
+@ .global enable
+@ .type enable, %function
+@ enable:
+@     @r0 deve ser o hps_virtual
+@     str r1, [r0, #PIO_ENABLE]
+@     bx lr
 
 .global pulso_enable
 .type pulso_enable, %function
 pulso_enable:
+    push {r1, lr}
     @r0 deve ser o hps_virtual
     mov r1, #1
     str r1, [r0, #PIO_ENABLE]
     mov r1, #0
     str r1, [r0, #PIO_ENABLE]
-    bx lr
+    pop {r1, pc}
 
 .global fechar
 .type fechar, %function
