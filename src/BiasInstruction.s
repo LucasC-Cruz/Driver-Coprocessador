@@ -23,8 +23,7 @@
 
 
 @TODO: 
-@ - Abertura de buffer com tamanho dinâmico
-@ - Montar instrução
+@ - Abertura de buffer com tamanho dinâmico??
 @ - Seria bom persistirmos o número de vezes que executamos a inferência
 @
 @
@@ -33,14 +32,41 @@
 
 
 .section .bss
-    ins: .skip 5     @abre 16 bytes de espaço, quero fazer isto dinâmicamente
-    saida: .skip 10  @valor qqlr aq só pra ter um buffer de saída
+    ins: .skip 20     @abre 16 bytes de espaço, quero fazer isto dinâmicamente
+    saida: .skip 100  @valor qqlr aq só pra ter um buffer de saída
 
 .section .data
-    filename:        .asciz "/mnt/c/Users/lucas/Desktop/Programação/PastasVs/Assembly/Driver-Coprocessador/data/TesteBias.txt"
+    filename:        .asciz "/mnt/c/Users/lucas/Desktop/Programação/PastasVs/Assembly/Driver-Coprocessador/data/output.bin"
     error_leitura:   .ascii "Erro na leitura\n"
     msg_g:           .ascii "O valor é: "
     sucesso_leitura: .ascii "Consegui ler!\n"
+
+
+.section .text
+
+
+print:
+    push {r1, r2, r9, lr}
+    ldr r9, =saida
+    @add r0, r0, #48
+    str r0, [r9]
+    
+
+    mov r7, #SYSCALL_WRITE @escreve
+    mov r0, #1             @stdout (tela)
+
+    @printa a primeira mensagem
+    ldr r1, =msg_g
+    mov r2, #11            @tamanho da saída em bytes
+    svc #0
+
+    @printa o valor do buffer saida
+    ldr r1, =saida
+    mov r2, #100            @tamanho da saída em bytes (1 reg)
+    svc #0
+
+    pop {r1, r2, r9, pc}
+ 
 
 
 erro:
@@ -63,28 +89,25 @@ sucesso:
     bx lr
     
 
-print:
-    mov r7, #SYSCALL_WRITE @escreve
-    mov r0, #1             @stdout (tela)
 
-    @printa a primeira mensagem
-    ldr r1, =msg_g
-    mov r2, #11            @tamanho da saída em bytes
-    svc #0
 
-    @printa o valor do buffer saida
-    ldr r1, =saida
-    mov r2, #10            @tamanho da saída em bytes
-    svc #0
+.type finalizar_sucesso, %function
+    finalizar_sucesso:
+        mov r7, #1
+        mov r0, #0
+        svc #0
 
-    bx lr
- 
-escreve_b_s:
-    push {r9, lr}
-    ldr r9, =saida
-    add r0, r0, #48
-    str r0, [r9]
-    pop {r9, pc}
+.type finalizar_erro, %function
+    finalizar_erro:
+        mov r7, #1
+        mov r0, #1
+        svc #0
+
+.type converte_decimal, %function
+    converte_decimal:
+        sub r0, r0, #48
+        bx lr
+
 
 
 
@@ -111,34 +134,17 @@ escreve_b_s:
                                        @ abertura de arquivo a ordem importa
 
         ldr r1, =ins                   @ neste caso usa r1 pra receber o buffer
-        mov r2, #5                    @ Quantos bytes ele vai ler
+        mov r2, #6                    @ Quantos bytes ele vai ler
         svc #0
 
 
                                        @ r0 = (você guarda o resultado aqui)
                                        @ r0, contém quantas merdas foram lidas com sucesso
-        cmp r0, #5                     @ se leu menos do devia ent é pra dar erro
+        cmp r0, #6                     @ se leu menos do devia ent é pra dar erro
         blt erro
         bl sucesso
         pop {r1, r2, r7, pc}
 @cospe o r5 e o r0 com o endereço para leitura
-
-.type finalizar_sucesso, %function
-    finalizar_sucesso:
-        mov r7, #1
-        mov r0, #0
-        svc #0
-
-.type finalizar_erro, %function
-    finalizar_erro:
-        mov r7, #1
-        mov r0, #1
-        svc #0
-
-.type converte_ascii, %function
-    converte_decimal:
-        sub r0, r0, #48
-        bx lr
 
 
 
@@ -152,7 +158,7 @@ escreve_b_s:
     @depois de somar geral chamamos as funções que mandam para a placa e reiniciamos o loop até preencher a memória
 
 
-.section .text
+
 .global _start
 
 _start:
@@ -176,12 +182,14 @@ _start:
     bl read
 
     bl mapear @r0 tem endereço base agora
+    @bl print
 
-    mov r10, r0
-
+    mov r10, r0 @salvando em r10 para podermos utilizar no futuro
+    
 @buffer já cheio dos binários em sequência
+@atualmente tem vários lixos aí
     ldr r5, =ins  
-    mov r6, #5 @hardcoded por enquanto
+    mov r6, #2 @hardcoded por enquanto
     b loop
 
     b finalizar_sucesso
@@ -197,7 +205,7 @@ loop:
 
 
 send_bias:
-    ldrh r1, [r5, r9] @carrega 2 bytes half-word
+    ldrh r1, [r5, r9] @carrega 2 bytes do buffer ins (half-word)
 
     lsl r1, #3      @dá offset dado para garantir que n vai somar de fato com o opcode
 
@@ -211,8 +219,8 @@ send_bias:
 
 
     @r1 agora possui a instrução completa
-    mov r0, r1
-    bl escreve
+    mov r7, r1
+   @ bl print    
 
     mov r0, r10
     @r0, com endereço base
@@ -224,22 +232,22 @@ send_bias:
     
     bl resultado
     @r0 agr tem o valor de resultado
-    bl escreve
+    @bl print
     @escrever para debug
 
     bl flag_busy
     @r0 agr tem o valor de busy
-    bl escreve
+   @ bl print
     @escrever para debug
 
     bl flag_error
     @r0 agr tem o valor de error
-    bl escreve
+   @ bl print
     @escrever para debug
 
     bl flag_done
     @r0 agr tem o valor de done
-    bl escreve
+   @ bl print
     @escrever para debug
     cmp r0, #1
     beq loop

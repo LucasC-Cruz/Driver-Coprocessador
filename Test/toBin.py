@@ -1,9 +1,17 @@
-numero = int(input("Digite um número inteiro (0-65535): "))
 
-dados = numero.to_bytes(4, 'big')
 
-with open('output.bin', 'wb') as arquivo:
-    arquivo.write(dados)
+
+try:
+    with open('output.bin', 'wb') as arquivo:
+        for i in range(0, 3):
+            numero = int(input("Digite um número inteiro (0-65535): "))
+            dados = numero.to_bytes(2, 'big')
+            arquivo.write(dados)
+except FileNotFoundError:
+    print("Erro na abertura do arquivo")
+
+
+
 
 print("Dados salvos em 'output.bin'")
 
