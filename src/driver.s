@@ -128,7 +128,7 @@ resultado:
 @ ==================== FLAGS ==================== 
 
 .global get_flag_done
-.type flag_done, %function
+.type get_flag_done, %function
 get_flag_done:
     @r0 deve ser o hps_virtual
     ldr r0, [r0, #PIO_FLAG_DONE]
