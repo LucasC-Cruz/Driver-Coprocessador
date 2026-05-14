@@ -99,6 +99,7 @@ sucesso:
 
 .type finalizar_erro, %function
     finalizar_erro:
+    
         mov r7, #1
         mov r0, #1
         svc #0
