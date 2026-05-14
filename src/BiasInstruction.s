@@ -10,14 +10,14 @@
 
 .extern mapear
 .extern reset
+.extern instruction
 .extern iniciar
 .extern status
 .extern resultado
-.extern flag_done
-.extern flag_busy
-.extern flag_error
+.extern get_flag_done
+.extern get_flag_busy
+.extern get_flag_error
 .extern enable
-.extern pulso_enable
 .extern fechar
 
 
@@ -226,9 +226,9 @@ send_bias:
     mov r0, r10
     @r0, com endereço base
     
-    bl store
+    bl instruction
 
-    bl pulso_enable
+    bl enable
 
     
     bl resultado
@@ -236,17 +236,17 @@ send_bias:
     @bl print
     @escrever para debug
 
-    bl flag_busy
+    bl get_flag_busy
     @r0 agr tem o valor de busy
    @ bl print
     @escrever para debug
 
-    bl flag_error
+    bl get_flag_error
     @r0 agr tem o valor de error
    @ bl print
     @escrever para debug
 
-    bl flag_done
+    bl get_flag_done
     @r0 agr tem o valor de done
    @ bl print
     @escrever para debug
