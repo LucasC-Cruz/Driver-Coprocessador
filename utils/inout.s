@@ -15,15 +15,15 @@
     .global saida
     saida: .skip 100  @valor qqlr aq só pra ter um buffer de saída
 
+
 .section .data
-    filename:        .asciz "/mnt/c/Users/lucas/Desktop/Programação/PastasVs/Assembly/Driver-Coprocessador/data/TesteBias.txt"
-    error_leitura:   .ascii "Erro na leitura\n"
+    .global msg_g
     msg_g:           .ascii "O valor é: "
-    sucesso_leitura: .ascii "Consegui ler!\n"
+    
 
 
         
-
+.section .text
 .global print_msg
 .type print_msg, %function
 print_msg:
@@ -38,7 +38,7 @@ print_msg:
 
     bx lr
  
- 
+.global print_reg 
 .type print_reg, %function
 print_reg:
     ldr r9, =saida
