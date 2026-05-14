@@ -1,7 +1,7 @@
 .equ SYSCALL_OPEN,      5
 .equ SYSCALL_CLOSE,     6
-.equ SYSCALL_MMAP2,     192
 .equ SYSCALL_MUNMAP,    91
+.equ SYSCALL_MMAP2,     192
 
 .equ PAGINA,            0x5000
 .equ LWHPS2FPGA_BASE,   0xFF200
@@ -55,16 +55,15 @@ fechar:
 
 @ ==================== SINAIS DE CONTROLE ==================== 
 
-.global pulso_enable
-.type pulso_enable, %function
-pulso_enable:
-    push {r1, lr}
+.global enable
+.type enable, %function
+enable:
     @r0 deve ser o hps_virtual
     mov r1, #1
     str r1, [r0, #PIO_ENABLE]
     mov r1, #0
     str r1, [r0, #PIO_ENABLE]
-    pop {r1, pc}
+    bx lr
 
 .global reset
 .type reset, %function
@@ -84,6 +83,8 @@ clear_operation:
     str r1, [r0, #PIO_CLR_OP]
     bx lr
 
+@ ==================== INSTRUÇÕES BÁSICAS ==================== 
+
 .global instruction
 .type instruction, %function
 instruction:
@@ -92,8 +93,6 @@ instruction:
     @r2 dado
     str r1, [r0, #PIO_INSTRUCTION]
     bx lr
-
-@ ==================== INSTRUÇÕES BÁSICAS ==================== 
 
 .global iniciar
 .type iniciar, %function
@@ -128,23 +127,23 @@ resultado:
 
 @ ==================== FLAGS ==================== 
 
-.global flag_done
+.global get_flag_done
 .type flag_done, %function
-flag_done:
+get_flag_done:
     @r0 deve ser o hps_virtual
     ldr r0, [r0, #PIO_FLAG_DONE]
     bx lr
 
-.global flag_busy
-.type flag_busy, %function
-flag_busy:
+.global get_flag_busy
+.type get_flag_busy, %function
+get_flag_busy:
     @r0 deve ser o hps_virtual
     ldr r0, [r0, #PIO_FLAG_BUSY]
     bx lr
 
-.global flag_error
-.type flag_error, %function
-flag_error:
+.global get_flag_error
+.type get_flag_error, %function
+get_flag_error:
     @r0 deve ser o hps_virtual
     ldr r0, [r0, #PIO_FLAG_ERROR]
     bx lr
