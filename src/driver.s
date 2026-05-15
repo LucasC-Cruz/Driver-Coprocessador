@@ -19,8 +19,7 @@
 .section .data
 dev_mem: .asciz "/dev/mem"
 
-@ ==================== MAPEAMENTO ==================== 
-
+@ ==================== MAPEAMENTO ====================
 .section .text
 .global mapear
 .type mapear, %function
@@ -120,13 +119,14 @@ NO_OP:
     str r1, [r0, #PIO_INSTRUCTION]
     bx lr
 
-.global resultado
-.type resultado, %function
-resultado:
+.global get_resultado
+.type get_resultado, %function
+get_resultado:
     @r0 deve ser o hps_virtual
     ldr r0, [r0, #PIO_RESULTADO]
     bx lr
 
+@ ==================== INSTRUÇÔES DE MEMORIA ===================
 .global str_img
 .type str_img, %function
 str_img:
@@ -136,7 +136,8 @@ str_img:
     orr r1, r1, r2      @soma todos os bits em um ergistrador
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
     bl enable                       @enable na instrucao
-    bl espera_done                  @agurda done para retorno
+    bl espera_done                  @agurda done para retorno, se der erro vai ficar preso pra sempre aqui...
+    bl clear_operation              @abaixa a flag de done, colocar no inicio em vez daqui? permitiria conferir a flag no local que fez a chamada  
     bx lr
 
 .global str_bias
@@ -150,6 +151,21 @@ str_bias:
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
     bl enable                       @enable na instrucao
     bl espera_done                  @agurda done para retorno
+    bl clear_operation
+    bx lr
+
+.global str_beta
+.type str_beta, %function
+str_beta:
+    @r0 deve ser o hps_virtual
+    lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
+    lsl r2, r2, #14     @dado lido no campo de dado 
+    orr r1, r1, r2      @soma todos os bits em um ergistrador
+    add r1, r1, #4      @soma op code de store beta
+    str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
+    bl enable                       @enable na instrucao
+    bl espera_done                  @agurda done para retorno
+    bl clear_operation
     bx lr
 
 .global str_wadress
@@ -157,7 +173,7 @@ str_bias:
 str_wadress:
     @r0 deve ser o hps_virtual
     lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
-    add r1, r1, #1      @soma op code de store bias
+    add r1, r1, #1      @soma op code de store weigth adress
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
     bl enable                       @enable na instrucao
     bx lr                           @não tem done, então só volta direto...
@@ -167,10 +183,11 @@ str_wadress:
 str_weight:
     @r0 deve ser o hps_virtual
     lsl r1, r1, #3      @r1 agr tem o dado no campo correto 
-    add r1, r1, #2      @soma op code de store bias
+    add r1, r1, #2      @soma op code de store weigth
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
     bl enable                       @enable na instrucao
     bl espera_done                  @agurda done para retorno
+    bl clear_operation              
     bx lr
 
 @ ==================== FLAGS ==================== 
@@ -178,6 +195,7 @@ str_weight:
 .global espera_done
 .type espera_done, %function
 espera_done:
+    @tratamento da flag de erro aqui?
     ldr r1, [r0, #PIO_FLAG_DONE]    @guarda o sinal de done em r1
     cmp r1, #0                      @compara done com 0
     beq espera_done                 @se é zero, lê done de novo, até ser 1
