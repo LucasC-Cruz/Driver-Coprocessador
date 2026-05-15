@@ -15,6 +15,8 @@
 .equ PIO_FLAG_ERROR,    0x50   
 .equ PIO_CLR_OP,        0x60
 .equ PIO_RESET_COP,     0x70
+.equ PIO_CONFIRMAR,     0x80
+
 
 .section .data
 dev_mem: .asciz "/dev/mem"
@@ -58,29 +60,33 @@ fechar:
 .type enable, %function
 enable:
     @r0 deve ser o hps_virtual
+    push {lr}
     mov r1, #1
     str r1, [r0, #PIO_ENABLE]
     mov r1, #0
     str r1, [r0, #PIO_ENABLE]
-    bx lr
+    pop {pc}
 
 .global reset
 .type reset, %function
 reset:
     mov r1, #1
-    str r1, [r0, #PIO_CLR_OP]
+    str r1, [r0, #PIO_RESET_COP]
     mov r1, #0
-    str r1, [r0, #PIO_CLR_OP]
+    str r1, [r0, #PIO_RESET_COP]
     bx lr
 
 .global clear_operation
 .type clear_operation, %function
 clear_operation:
+    push {lr}
+
     mov r1, #1
     str r1, [r0, #PIO_CLR_OP]
     mov r1, #0
     str r1, [r0, #PIO_CLR_OP]
-    bx lr
+    
+    pop {pc}
 
 @ ==================== INSTRUÇÕES BÁSICAS ==================== 
 
@@ -93,14 +99,23 @@ instruction:
     str r1, [r0, #PIO_INSTRUCTION]
     bx lr
 
+.global confirmar
+.type confirmar, %function
+confirmar:
+    @r0 deve ser o hps_virtual  
+    @r1 endereco
+    @r2 dado
+    ldr r0, [r0, #PIO_CONFIRMAR]
+    bx lr
+
 .global iniciar
 .type iniciar, %function
 iniciar:
     @r0 deve ser o hps_virtual
     mov r1, #5
     str r1, [r0, #PIO_INSTRUCTION]
-    bl enable
-    bl espera_done
+    @ bl enable
+    @ bl espera_done
     bx lr
 
 .global status
@@ -131,27 +146,27 @@ get_resultado:
 .type str_img, %function
 str_img:
     @r0 deve ser o hps_virtual
+    @ bl clear_operation              @abaixa a flag de done, colocar no inicio em vez daqui? permitiria conferir a flag no local que fez a chamada  
     lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
     lsl r2, r2, #13     @dado lido no campo de dado 
     orr r1, r1, r2      @soma todos os bits em um ergistrador
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
-    bl enable                       @enable na instrucao
-    bl espera_done                  @agurda done para retorno, se der erro vai ficar preso pra sempre aqui...
-    bl clear_operation              @abaixa a flag de done, colocar no inicio em vez daqui? permitiria conferir a flag no local que fez a chamada  
+    @ bl enable                       @enable na instrucao
+    @ bl espera_done                  @agurda done para retorno, se der erro vai ficar preso pra sempre aqui...
     bx lr
 
 .global str_bias
 .type str_bias, %function
 str_bias:
     @r0 deve ser o hps_virtual
+    @bl clear_operation
     lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
     lsl r2, r2, #10     @dado lido no campo de dado 
     orr r1, r1, r2      @soma todos os bits em um ergistrador
     add r1, r1, #3      @soma op code de store bias
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
-    bl enable                       @enable na instrucao
-    bl espera_done                  @agurda done para retorno
-    bl clear_operation
+    @bl enable                       @enable na instrucao
+    @bl espera_done                  @agurda done para retorno
     bx lr
 
 .global str_beta
@@ -163,9 +178,9 @@ str_beta:
     orr r1, r1, r2      @soma todos os bits em um ergistrador
     add r1, r1, #4      @soma op code de store beta
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
-    bl enable                       @enable na instrucao
-    bl espera_done                  @agurda done para retorno
-    bl clear_operation
+    @ bl enable                       @enable na instrucao
+    @ bl espera_done                  @agurda done para retorno
+    @ bl clear_operation
     bx lr
 
 .global str_wadress
@@ -175,7 +190,7 @@ str_wadress:
     lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
     add r1, r1, #1      @soma op code de store weigth adress
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
-    bl enable                       @enable na instrucao
+    @ bl enable                       @enable na instrucao
     bx lr                           @não tem done, então só volta direto...
 
 .global str_weight
@@ -185,9 +200,9 @@ str_weight:
     lsl r1, r1, #3      @r1 agr tem o dado no campo correto 
     add r1, r1, #2      @soma op code de store weigth
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
-    bl enable                       @enable na instrucao
-    bl espera_done                  @agurda done para retorno
-    bl clear_operation              
+    @ bl enable                       @enable na instrucao
+    @ bl espera_done                  @agurda done para retorno
+    @ bl clear_operation              
     bx lr
 
 @ ==================== FLAGS ==================== 
@@ -195,11 +210,15 @@ str_weight:
 .global espera_done
 .type espera_done, %function
 espera_done:
+    push {lr}
+
+espera:
     @tratamento da flag de erro aqui?
     ldr r1, [r0, #PIO_FLAG_DONE]    @guarda o sinal de done em r1
     cmp r1, #0                      @compara done com 0
-    beq espera_done                 @se é zero, lê done de novo, até ser 1
-    bx lr                           @retorna
+    beq espera                      @se é zero, lê done de novo, até ser 1
+
+    pop {pc}                           @retorna
 
 .global get_flag_done
 .type get_flag_done, %function
