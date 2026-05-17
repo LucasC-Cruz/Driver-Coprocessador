@@ -1,0 +1,68 @@
+def converter_mif_para_bin(arquivo_entrada, arquivo_saida):
+    """
+    Lê um arquivo MIF, extrai valores hexadecimais,
+    inverte a ordem dos bytes e salva em um arquivo .bin
+    
+    Args:
+        arquivo_entrada: caminho do arquivo .mif em formato txt
+        arquivo_saida: caminho do arquivo .bin de saída
+    """
+    
+    try:
+        with open(arquivo_entrada, 'r') as f:
+            linhas = f.readlines()
+        
+        # Lista para armazenar os bytes
+        bytes_dados = []
+        em_dados = False
+        
+        for linha in linhas:
+            linha = linha.strip()
+            
+            if not linha or linha in ['CONTENT', 'BEGIN', 'END;']:
+                if linha == 'BEGIN':
+                    em_dados = True
+                continue
+            
+            if not em_dados or ':' not in linha:
+                continue
+            
+            try:
+                partes = linha.split(':')
+                valor_hex = partes[1].strip().rstrip(';')
+                
+                # Extrai os dois bytes
+                byte1 = valor_hex[0:2]   # Primeiro byte (ex: FD)
+                byte2 = valor_hex[2:4]   # Segundo byte (ex: 3A)
+                
+                # Inverte a ordem
+                invertido = byte2 + byte1  # (ex: 3AFD)
+                
+                # Converte para bytes e adiciona à lista
+                byte_b1 = int(byte2, 16)
+                byte_b2 = int(byte1, 16)
+                
+                bytes_dados.append(byte_b1)
+                bytes_dados.append(byte_b2)
+                
+                print(f"Hex: {valor_hex} → Invertido: {invertido} → Bytes: {byte_b1:02X} {byte_b2:02X}")
+                
+            except Exception as e:
+                print(f"Erro ao processar linha: {linha}")
+        
+        # Escreve em arquivo binário
+        with open(arquivo_saida, 'wb') as f:
+            f.write(bytes(bytes_dados))
+        
+        print(f"\n✓ Arquivo binário criado: {arquivo_saida}")
+        print(f"✓ Total de bytes: {len(bytes_dados)}")
+        
+    except FileNotFoundError:
+        print(f"Erro: arquivo '{arquivo_entrada}' não encontrado")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
+
+# Executa
+if __name__ == "__main__":
+    converter_mif_para_bin('Driver-Coprocessador/data/beta_q.mif', 'beta_q_invertido.bin')

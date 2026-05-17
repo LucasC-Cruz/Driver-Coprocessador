@@ -22,14 +22,17 @@
     pesos_buffer:   .skip 200704     @100.352 pesos. pequeno esse, será que dá problema? são 0,2 mb
 
 .section .data
-    image_filename: .asciz "imagem_4.bin"
-    bias_filename:  .asciz "b_q.bin"
-    betas_filename: .asciz "beta_q.bin"
-    pesos_filename: .asciz "w_in_q.bin"
+    image_filename: .asciz "Driver-Coprocessador/data/imagem_4.bin"
+    bias_filename:  .asciz "Driver-Coprocessador/data/b_q_invertido.bin"
+    betas_filename: .asciz "Driver-Coprocessador/data/beta_q_invertido.bin"
+    pesos_filename: .asciz "Driver-Coprocessador/data/W_in_invertido.bin"
 
 @ r0 tem hps virtual
 @ r1 offset pio da instrucao 
 .section .text
+
+@recebe como entrada no r0, o hps virtual 
+@tem como saida nada
 .global store_image
     .type store_image, %function
     store_image:
@@ -237,8 +240,8 @@
 .type fechar_arquivo, %function
     fechar_arquivo:
         push {r0, lr}
-            mov r7, #SYSCALL_CLOSE
-            svc 0
+        mov r7, #SYSCALL_CLOSE
+        svc 0
         pop {r0, pc}
 
 .type finalizar_erro, %function
