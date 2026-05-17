@@ -19,7 +19,8 @@
 .extern get_flag_error
 .extern enable
 .extern fechar
-
+.extern print_reg
+.extern print_msg
 
 
 @TODO: 
@@ -44,7 +45,7 @@
 
 .section .text
 
-
+/* 
 print:
     push {r1, r2, r9, lr}
     ldr r9, =saida
@@ -67,7 +68,7 @@ print:
 
     pop {r1, r2, r9, pc}
  
-
+*/
 
 erro:
 
@@ -238,7 +239,7 @@ send_bias:
 
     bl get_flag_busy
     @r0 agr tem o valor de busy
-   @ bl print
+    bl print_reg
     @escrever para debug
 
     bl get_flag_error

@@ -1,0 +1,61 @@
+def converter_mif_inverter_bytes(arquivo_entrada, arquivo_saida=None):
+    """
+    Lê um arquivo MIF, descarta cabeçalho e índices,
+    inverte apenas a ordem dos bytes (endianness).
+    
+    Args:
+        arquivo_entrada: caminho do arquivo .mif em formato txt
+        arquivo_saida: (opcional) caminho para salvar o resultado
+    """
+    
+    try:
+        with open(arquivo_entrada, 'r') as f:
+            linhas = f.readlines()
+        
+        resultados = []
+        em_dados = False
+        
+        for linha in linhas:
+            linha = linha.strip()
+            
+            if not linha or linha in ['CONTENT', 'BEGIN', 'END;']:
+                if linha == 'BEGIN':
+                    em_dados = True
+                continue
+            
+            if not em_dados or ':' not in linha:
+                continue
+            
+            try:
+                partes = linha.split(':')
+                indice = partes[0].strip()
+                valor_hex = partes[1].strip().rstrip(';')
+                
+                # Inverte a ordem dos bytes
+                # FD3A → 3AFD
+                byte1 = valor_hex[0:2]   # FD
+                byte2 = valor_hex[2:4]   # 3A
+                invertido = byte2 + byte1  # 3AFD
+                
+                resultado = f"[{indice}] Hex original: {valor_hex} → Invertido: {invertido}"
+                print(resultado)
+                resultados.append(resultado)
+                
+            except Exception as e:
+                print(f"Erro ao processar linha: {linha}")
+        
+        # Salva em arquivo se solicitado
+        if arquivo_saida:
+            with open(arquivo_saida, 'w') as f:
+                for resultado in resultados:
+                    f.write(resultado + '\n')
+            print(f"\n✓ Arquivo salvo em: {arquivo_saida}")
+    
+    except FileNotFoundError:
+        print(f"Erro: arquivo '{arquivo_entrada}' não encontrado")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
+
+# Executa
+converter_mif_inverter_bytes('Driver-Coprocessador/data/b_q.mif', 'b_a_bytes_invertidos.txt')
