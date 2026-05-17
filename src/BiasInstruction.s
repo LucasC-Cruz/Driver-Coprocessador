@@ -12,8 +12,8 @@
 .extern reset
 .extern instruction
 .extern iniciar
+.extern get_resultado
 .extern status
-.extern resultado
 .extern get_flag_done
 .extern get_flag_busy
 .extern get_flag_error
@@ -37,7 +37,7 @@
     saida: .skip 100  @valor qqlr aq só pra ter um buffer de saída
 
 .section .data
-    filename:        .asciz "/mnt/c/Users/lucas/Desktop/Programação/PastasVs/Assembly/Driver-Coprocessador/data/output.bin"
+    filename:        .asciz "output.bin"
     error_leitura:   .ascii "Erro na leitura\n"
     msg_g:           .ascii "O valor é: "
     sucesso_leitura: .ascii "Consegui ler!\n"
@@ -45,14 +45,15 @@
 
 .section .text
 
-/* 
-print:
-    push {r1, r2, r9, lr}
-    ldr r9, =saida
-    @add r0, r0, #48
-    str r0, [r9]
-    
 
+
+.global print_msg
+
+@ENTRADA: ponteiro de buffer com mensagem
+@SAÍDA: r0 com o valor de números bytes realmente escritos
+.type print_msg, %function
+print_msg:
+    push {r0, r1, r2, r7, lr}
     mov r7, #SYSCALL_WRITE @escreve
     mov r0, #1             @stdout (tela)
 
@@ -61,14 +62,34 @@ print:
     mov r2, #11            @tamanho da saída em bytes
     svc #0
 
+    pop {r0, r1, r2, r7, pc}
+
+.global print_reg 
+@ENTRADA: R0: com valor a ser exibido
+@         endereço do buffer de saída
+@SAÍDA:   R0: com valor de bytes realmente escritos
+.type print_reg, %function
+print_reg:
+    push {r1, r2, r7, r9, r10, lr}
+    mov r10, r0
+    ldr r9, =saida
+    add r0, r0, #48
+    strh r0, [r9]
+    
+
+    
+    mov r7, #SYSCALL_WRITE @escreve
+    mov r0, #1             @stdout (tela)
+
     @printa o valor do buffer saida
     ldr r1, =saida
-    mov r2, #100            @tamanho da saída em bytes (1 reg)
+    mov r2, #10            @tamanho da saída em bytes
     svc #0
 
-    pop {r1, r2, r9, pc}
- 
-*/
+    mov r0, r10
+    pop {r1, r2, r7, r9, r10, pc}
+
+
 
 erro:
 
@@ -110,7 +131,7 @@ sucesso:
         sub r0, r0, #48
         bx lr
 
-
+@r0 agr tem o valor de resultado
 
 
 @basicamente tem uma receitinha de bolo para abrir um arquivo
@@ -136,7 +157,7 @@ sucesso:
                                        @ abertura de arquivo a ordem importa
 
         ldr r1, =ins                   @ neste caso usa r1 pra receber o buffer
-        mov r2, #6                    @ Quantos bytes ele vai ler
+        mov r2, #6      @r0 agr tem o valor de resultado              @ Quantos bytes ele vai ler
         svc #0
 
 
@@ -160,20 +181,10 @@ sucesso:
     @depois de somar geral chamamos as funções que mandam para a placa e reiniciamos o loop até preencher a memória
 
 
+@r0 agr tem o valor de resultado
+.global main
+main:
 
-.global _start
-
-_start:
-    mov r0,  #0
-    mov r1,  #0
-    mov r2,  #0
-    mov r3,  #0
-    mov r4,  #0
-    mov r5,  #0
-    mov r6,  #0
-    mov r7,  #0
-    mov r8,  #0
-    mov r9,  #0
     mov r10, #1
 
     @validações mapear
@@ -187,11 +198,12 @@ _start:
     @bl print
 
     mov r10, r0 @salvando em r10 para podermos utilizar no futuro
+    mov r9, #0
     
 @buffer já cheio dos binários em sequência
 @atualmente tem vários lixos aí
     ldr r5, =ins  
-    mov r6, #2 @hardcoded por enquanto
+    mov r6, #3 @hardcoded por enquanto
     b loop
 
     b finalizar_sucesso
@@ -199,7 +211,6 @@ _start:
 
 
 loop:
-    add r9, r9, #1 @incrementa contador
     b send_bias
     cmp r9, r6
     blt loop
@@ -221,36 +232,43 @@ send_bias:
 
 
     @r1 agora possui a instrução completa
-    mov r7, r1
    @ bl print    
 
-    mov r0, r10
+   
     @r0, com endereço base
     
-    bl instruction
+    @recebe r1 com a instrução
+    @recebe r0 com o hps_virtual
+    bl instruction@r0 agr tem o valor de resultado
 
+    @o r1 perde a instrução aqui, mas não utilizamos novamente até a próxima instrução
     bl enable
 
+    mov r0, r10
     
-    bl resultado
-    @r0 agr tem o valor de resultado
-    @bl print
-    @escrever para debug
-
     bl get_flag_busy
     @r0 agr tem o valor de busy
+    bl print_msg
     bl print_reg
+
+   @ bl print
     @escrever para debug
 
+    mov r0, r10
     bl get_flag_error
     @r0 agr tem o valor de error
-   @ bl print
-    @escrever para debug
-
+    bl print_msg
+    bl print_reg
+    
+  
+    mov r0, r10
     bl get_flag_done
     @r0 agr tem o valor de done
-   @ bl print
-    @escrever para debug
+    bl print_msg
+    bl print_reg
+    
+
+    add r9, r9, #1 @incrementa contador
     cmp r0, #1
     beq loop
 
