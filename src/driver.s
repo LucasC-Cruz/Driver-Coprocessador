@@ -228,18 +228,14 @@ str_weight:
 .type espera_done, %function
 espera_done:
     push {r0, r1, lr}
-    mov r2, #0
 espera:
-    ldr r1, [r0, #PIO_FLAG_ERROR]
-    cmp r1, #0                      @compara errro com 0
-    bne erro                        @se houve erro
+    ldr r2, [r0, #PIO_FLAG_ERROR]
+    cmp r2, #0                      @compara errro com 0
+    bne fim                        @se houve erro
 
     ldr r1, [r0, #PIO_FLAG_DONE]    @guarda o sinal de done em r1
     cmp r1, #0                      @compara done com 0
-    beq espera
-    b fim                           @se é zero, lê done de novo, até ser 1
-erro:
-    mov r2, #1
+    beq espera                      @se é zero, lê done de novo, até ser 1   
 fim:
     pop {r0, r1, pc}                           @retorna
 
