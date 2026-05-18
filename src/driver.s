@@ -17,9 +17,29 @@
 .equ PIO_RESET_COP,     0x70
 .equ PIO_CONFIRMAR,     0x80
 
+.equ SYSCALL_EXIT,     1
+.equ SYSCALL_READ,     3
+.equ SYSCALL_WRITE,    4
+.equ SYSCALL_OPEN,     5
+.equ SYSCALL_CLOSE,    6
+.equ READ_ONLY,        0
+
+
+.section .bss
+.align 2
+    image_buffer:   .skip 784        @abre 784 bytes de espaço
+    bias_buffer:    .skip 256         @128(bias)*2
+    beta_buffer:    .skip 2560       @1280 betas
+    pesos_buffer:   .skip 200704 
 
 .section .data
 dev_mem: .asciz "/dev/mem"
+image_filename: .asciz "imagem_3.bin"
+bias_filename:  .asciz "b_q.bin"
+betas_filename: .asciz "beta_q.bin"
+pesos_filename: .asciz "W_in_q.bin"
+sucesso_leitura: .ascii "Consegui ler!\n"
+
 
 .section .text
 @ ==================== MAPEAMENTO ====================
@@ -79,7 +99,6 @@ reset:
     str r1, [r0, #PIO_RESET_COP]
     mov r1, #0
     str r1, [r0, #PIO_RESET_COP]
-    bx lr
     pop {r1, pc}
 
 @limpa operação de erro 
@@ -188,7 +207,7 @@ str_bias:
 .type str_beta, %function
 str_beta:
     @r0 deve ser o hps_virtual
-    push {r1,lr}        @push r1 para não alterar endereco que sera incrementado depois
+    push {r1, lr}        @push r1 para não alterar endereco que sera incrementado depois
     lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
     lsl r2, r2, #14     @dado lido no campo de dado 
     orr r1, r1, r2      @soma todos os bits em um ergistrador
@@ -265,3 +284,245 @@ get_flag_error:
     push {lr}
     ldr r0, [r0, #PIO_FLAG_ERROR]
     pop {pc}
+
+
+@ =================================== STORE ON LOOP =====================================
+
+@recebe como entrada no r0, o hps virtual 
+@tem como saida nada
+.global store_image
+    .type store_image, %function
+    store_image:
+        push {r1-r8, lr}
+        mov r8, r0              @hps virtual
+
+        @abertura do arquivo binario      
+        ldr r0, =image_filename
+        bl abrir_arquivo
+        mov r6, r0                   @ guarda fd em r6 para fechar depois
+
+        mov r7, #SYSCALL_READ       
+        ldr r1, =image_buffer     
+        mov r2, #784              @ Quantos bytes vai ler
+        svc #0                      @ Buffer foi preenchido com dados do arquivo
+
+        ldr r3, =image_buffer         @ponteiro do buffer
+        mov r1, #0                  @ contador
+
+        mov r0, r8  @hps virtual, necessario para a chamada
+
+    store_image_loop:
+        ldrb r2, [r3], #1   @lendo o valor do buffer para r1, e incrementa ponteiro
+
+        @r0 hps
+        @r2 já tem o dado
+        @r1 deve conter o endereço, que está e atualizado em r5
+        bl str_img @guarda no pio ins
+        bl enable
+        bl espera_done
+        cmp r2, #0
+        bne finalizar_erro
+
+        @ adicionar retorno em espera done indicando tbm erro
+        @ e entao uma comparação aqui para tratar erro
+        add r1, #1
+        cmp r1, #784
+        bne store_image_loop
+    
+    @fechar
+        mov r0, r6
+        bl fechar_arquivo
+
+        pop {r1-r8, pc}
+
+
+@ r0 tem hps virtual
+@ r1 offset pio da instrucao 
+.global store_bias
+    .type store_bias, %function
+    store_bias:
+        push {r1-r8, lr}
+        
+        mov r8, r0              @hps virtual
+
+        @abertura do arquivo binario
+        ldr r0, =bias_filename
+        bl abrir_arquivo
+        mov r6, r0                   @ guarda fd em r6 para fechar depois
+
+
+        mov r7, #SYSCALL_READ       
+        ldr r1, =bias_buffer     
+        mov r2, #256              @ Quantos bytes vai ler
+        svc #0      
+                        @ Buffer foi preenchido com dados do arquivo
+        
+
+        ldr r3, =bias_buffer         @ponteiro do buffer
+        mov r1, #0                  @ contador
+
+        mov r0, r8  @hps virtual, necessario para a chamada
+
+    store_bias_loop:
+        ldrh r2, [r3]
+        add r3, r3, #2   @lendo o valor do buffer para r2, e incrementa ponteiro
+
+        @r0 hps
+        @r2 já tem o dado
+        @r1 deve conter o endereço
+        bl str_bias @guarda no pio ins
+        bl enable
+        bl espera_done
+        cmp r2, #0
+        bne finalizar_erro
+        
+        @ adicionar retorno em espera done indicando tbm erro
+        @ e entao uma comparação aqui para tratar erro
+        add r1, #1
+        cmp r1, #128
+        bne store_bias_loop
+
+    @fechar
+        mov r0, r6
+        bl fechar_arquivo
+
+        pop {r1-r8, pc}
+
+@função para armazaenar toda os betas
+@ r0 tem hps virtual
+@ r1 offset pio da instrucao 
+.global store_beta
+    .type store_beta, %function
+    store_beta:
+        push {r1-r8, lr}
+        mov r8, r0              @hps virtual
+
+        @abertura do arquivo binario
+        ldr r0, =betas_filename
+        bl abrir_arquivo
+        mov r6, r0                   @ guarda fd em r6 para fechar depois
+
+        mov r7, #SYSCALL_READ       
+        ldr r1, =beta_buffer     
+        mov r2, #2560              @ Quantos bytes vai ler
+        svc #0                      @ Buffer foi preenchido com dados do arquivo
+
+        ldr r3, =beta_buffer         @ponteiro do buffer
+        mov r1, #0                  @ contador
+
+        mov r0, r8  @hps virtual, necessario para a chamada
+
+    store_beta_loop:
+        ldrh r2, [r3]   @lendo o valor do buffer para r1, e incrementa ponteiro
+        add r3, r3, #2
+        @r0 hps
+        @r2 já tem o dado
+        @r1 deve conter o endereço, que está e atualizado em r5
+        bl str_beta @guarda no pio ins
+        bl enable
+        bl espera_done
+        cmp r2, #0
+        bne finalizar_erro
+        @ adicionar retorno em espera done indicando tbm erro
+        @ e entao uma comparação aqui para tratar erro
+        add r1, #1
+        cmp r1, #1280
+        bne store_beta_loop
+    
+    @fechar
+        mov r0, r6
+        bl fechar_arquivo
+
+        pop {r1-r8, pc}
+
+@função para armazaenar toda os betas
+@ r0 tem hps virtual
+@ r1 offset pio da instrucao 
+.global store_pesos
+    .type store_pesos, %function
+    store_pesos:
+        push {r1-r8, lr}
+        mov r8, r0              @hps virtual
+
+        @abertura do arquivo binario
+        ldr r0, =pesos_filename
+        bl abrir_arquivo
+        mov r6, r0                   @ guarda fd em r6 para fechar depois
+
+        mov r7, #SYSCALL_READ       
+        ldr r1, =pesos_buffer     
+        mov r2, #200704              @ Quantos bytes vai ler
+        svc #0                      @ Buffer foi preenchido com dados do arquivo
+
+        ldr r3, =pesos_buffer         @ponteiro do buffer
+        mov r1, #0                  @ contador (não r1, pois é usado como dado em)
+
+        mov r0, r8  @hps virtual, necessario para a chamada
+
+    store_pesos_loop:
+        ldrh r2, [r3]   @lendo o valor (half word) do buffer para r1, e incrementa ponteiro por 2 (bytes)
+        add r3, r3, #2
+        @r0 hps
+        @r2 já tem o dado
+        @r1 deve conter o endereço, que está e atualizado em r5
+        bl str_wadress  @guarda o endereco r1
+        bl enable
+
+        bl str_weight @possiblidade de apatar str_weight para usar r2, retirando mov  
+        bl enable
+        bl espera_done
+        cmp r2, #0      @retorno de espera_done diz se houve erro ou não
+        bne finalizar_erro
+
+        @ adicionar retorno em espera done indicando tbm erro
+        @ e entao uma comparação aqui para tratar erro
+        add r1, #1
+        cmp r1, #100352
+        bne store_pesos_loop
+    
+    @fechar
+        mov r0, r6
+        bl fechar_arquivo
+
+        pop {r1-r8, pc}
+
+
+.global sucesso
+.type sucesso, %function
+sucesso:
+    
+    push {r1, lr}
+    mov r7, #SYSCALL_WRITE @escreve
+    mov r0, #1             @stdout (tela)
+    ldr r1, =sucesso_leitura
+    mov r2, #17            @tamanho da saída em bytes
+    svc #0
+    pop {r1, pc}
+    
+
+
+@espera endereco do arquivo em r0
+.global abrir_arquivo
+.type abrir_arquivo, %function
+    abrir_arquivo:
+
+        mov r7, #SYSCALL_OPEN       
+        @ldr r0, =x_filename
+        mov r1, #READ_ONLY          
+        svc #0    
+        bx lr
+
+@fechar arquivoa apush {r0, lr}berto
+.global fechar_arquivo
+.type fechar_arquivo, %function
+    fechar_arquivo:
+        mov r7, #SYSCALL_CLOSE
+        svc 0
+        bx lr
+
+.type finalizar_erro, %function
+    finalizar_erro:
+    
+        mov r7, #1
+        mov r0, #1
+        svc #0
