@@ -23,10 +23,10 @@ extern void enable(void* hps_virtual);
 extern void reset(void* hps_virtual);
 extern void clear_operation(void* hps_virtual);
 
-extern int store_image(void* hps_virtual);
-extern int store_bias(void* hps_virtual);
-extern int store_beta(void* hps_virtual);
-extern int store_pesos(void* hps_virtual);
+extern void store_image(void* hps_virtual);
+extern void store_bias(void* hps_virtual);
+extern void store_beta(void* hps_virtual);
+extern void store_pesos(void* hps_virtual);
 
 
 
@@ -34,48 +34,54 @@ int main() {
     bool done, busy, error;
     int inst;
     int a;
+    int result;
 
     printf("\n============================\nOlá! Iniciando Coprocessador\n============================");
     void* hps_virtual = mapear();
-        printf(" %p ", hps_virtual);
 
     if ((intptr_t)hps_virtual == -1) {
         printf("Erro ao mapear memória");
         return 1;
     }
     printf("Memória mapeada no endereço: %p\n", hps_virtual);
-    printf("\n%s=>%s ", YELLOW, RESET);
+    printf("\n%s=>%s ", RESET, YELLOW);
 
-    printf("\n============================\n Iniciando Memória\n============================");
-    printf("%sCarregando Bias na memória do Coprocessador%s", RESET, YELLOW);
-    a = store_bias(hps_virtual);
-        if(a){printf("Erro carregamento Bias!");}
+    printf("\n============================\n Iniciando Memória\n============================\n");
+    printf("%sCarregando Bias na memória do Coprocessador%s", YELLOW, RESET);
+    store_bias(hps_virtual);
+    printf("\nTerminei de iniciar bias\n");
 
-    printf("%sCarregando Beta na memória do Coprocessador%s", RESET, BLUE);
-    a = store_beta(hps_virtual);
-        if(a){printf("Erro carregamento Beta!");}
+    printf("%sCarregando Beta na memória do Coprocessador%s", BLUE, RESET);
+    store_beta(hps_virtual);
+    printf("\nTerminei de iniciar beta\n");
 
-    printf("%sCarregando Pesos na memória do Coprocessador%s", RESET, CYAN);
-    a = store_pesos(hps_virtual);
-        if(a){printf("Erro carregamento Pesos!");}
+    printf("%sCarregando Pesos na memória do Coprocessador%s", CYAN, RESET);
+    store_pesos(hps_virtual);
+    printf("\nTerminei de iniciar pesos\n");
+        
 
-    printf("%sPré carregando imagem padrão 4%s", RESET, WHITE);
-    a = store_image(hps_virtual);
-        if(a){printf("Erro carregamento Imagem!");}
+    printf("%sPré carregando imagem padrão 4%s",  WHITE, RESET);
+    store_image(hps_virtual);
+    printf("\nTerminei de iniciar imagem\n");
+
     
-    
-
-
-    while(scanf("%d", &inst) == 1 && inst != 67) {
-        printf("Digite 1 se quiser realizar a inferência da imagem definida");
-        prinft("Digite 2 para trocar a imagem para inferência");
-        printf("Digite 67 para sair");
-
+        printf("\nDigite 1 se quiser realizar a inferência da imagem definida\n");
+        printf("\nDigite 2 para trocar a imagem para inferência\n");
+        printf("\nDigite 67 para sair\n");
         reset(hps_virtual);
-        printf("Resetando coprocessador...\n");
-        if(inst){
+        iniciar(hps_virtual);
+
+        printf("Resetando esta buceta\n");
+
+    while( (inst != 67) && (scanf("%d", &inst) == 1)) {
+        printf("\nDigite 1 se quiser realizar a inferência da imagem definida\n");
+        printf("\nDigite 2 para trocar a imagem para inferência\n");
+        printf("\nDigite 67 para sair\n");
+
+        if(inst !=2){
             iniciar(hps_virtual);
-            get_resultado(hps_virtual);
+            result = get_resultado(hps_virtual);
+            printf("\nResultado inferência: %d \n", result);
 
             done = get_flag_done(hps_virtual); 
             printf("\nFlag de done: %d \n", done);
@@ -87,7 +93,10 @@ int main() {
             printf("Flag de erro: %d \n", error);
 
             printf("\n%s=>%s ", YELLOW, RESET);
-        }else if(inst == 2){printf("Função não implementada para o Marco 2"); inst = 67;}
+        }else {
+            printf("Função não implementada para o Marco 2");
+            inst = 67;
+        }
     }
 
    
