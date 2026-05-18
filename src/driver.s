@@ -34,11 +34,12 @@
 
 .section .data
 dev_mem: .asciz "/dev/mem"
-image_filename: .asciz "imagem_3.bin"
-bias_filename:  .asciz "b_q.bin"
-betas_filename: .asciz "beta_q.bin"
-pesos_filename: .asciz "W_in_q.bin"
+image_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/binImg/imagem_4.bin"
+bias_filename:  .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/b_q_invertido.bin"
+betas_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/beta_q_invertido.bin"
+pesos_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/W_in_invertido.bin"
 sucesso_leitura: .ascii "Consegui ler!\n"
+mensagem_falha: .ascii "ERRO! Encerrando programa!"
 
 
 .section .text
@@ -194,13 +195,15 @@ str_img:
 str_bias:
     @r0 deve ser o hps_virtual
     @bl clear_operation
-    push {r1, lr}       @push r1 para não alterar endereco que sera incrementado depois
+    push {r1, r2, lr}       @push r1 para não alterar endereco que sera incrementado depois
     lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
+    cmp r2, #128
+    bge finalizar_erro
     lsl r2, r2, #10     @dado lido no campo de dado 
     orr r1, r1, r2      @soma todos os bits em um ergistrador
     add r1, r1, #3      @soma op code de store bias
     str r1, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio
-    pop {r1, pc}
+    pop {r1, r2, pc}
 
 @guarda beta na memoria 
 .global str_beta
@@ -320,8 +323,6 @@ get_flag_error:
         bl str_img @guarda no pio ins
         bl enable
         bl espera_done
-        cmp r2, #0
-        bne finalizar_erro
 
         @ adicionar retorno em espera done indicando tbm erro
         @ e entao uma comparação aqui para tratar erro
@@ -353,7 +354,7 @@ get_flag_error:
 
         mov r7, #SYSCALL_READ       
         ldr r1, =bias_buffer     
-        mov r2, #256              @ Quantos bytes vai ler
+        mov r2, #128              @ Quantos bytes vai ler
         svc #0      
                         @ Buffer foi preenchido com dados do arquivo
         
@@ -379,7 +380,7 @@ get_flag_error:
         @ adicionar retorno em espera done indicando tbm erro
         @ e entao uma comparação aqui para tratar erro
         add r1, #1
-        cmp r1, #128
+        cmp r1, #130
         bne store_bias_loop
 
     @fechar
@@ -498,6 +499,20 @@ sucesso:
     mov r2, #17            @tamanho da saída em bytes
     svc #0
     pop {r1, pc}
+
+
+
+.global falha
+.type falha, %function
+falha:
+    
+    push {r1, lr}
+    mov r7, #SYSCALL_WRITE @escreve
+    mov r0, #1             @stdout (tela)
+    ldr r1, =mensagem_falha
+    mov r2, #26            @tamanho da saída em bytes
+    svc #0
+    pop {r1, pc}
     
 
 
@@ -520,9 +535,10 @@ sucesso:
         svc 0
         bx lr
 
+.global finalizar_erro
 .type finalizar_erro, %function
     finalizar_erro:
-    
+        bl falha
         mov r7, #1
         mov r0, #1
         svc #0
