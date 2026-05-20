@@ -35,10 +35,10 @@
 .section .data
 dev_mem: .asciz "/dev/mem"
 @ 3, 5, estão inferindo 7
-image_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/binImg/imagem_9.bin"
-bias_filename:  .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/b_q_invertido.bin"
-betas_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/beta_q_invertido.bin"
-pesos_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/W_in_invertido.bin"
+image_filename: .asciz "imagem_9.bin"
+bias_filename:  .asciz "b_q_invertido.bin"
+betas_filename: .asciz "beta_q_invertido.bin"
+pesos_filename: .asciz "W_in_invertido.bin"
 sucesso_leitura: .ascii "Consegui ler!\n"
 mensagem_falha: .ascii "ERRO! Encerrando programa!"
 
@@ -101,6 +101,7 @@ reset:
     str r1, [r0, #PIO_RESET_COP]
     mov r1, #0
     str r1, [r0, #PIO_RESET_COP]
+
     pop {r1, pc}
 
 @limpa operação de erro 
@@ -319,9 +320,11 @@ get_flag_error:
         @r0 hps
         @r2 já tem o dado
         @r1 deve conter o endereço, que está e atualizado em r5
+        
         bl str_img @guarda no pio ins
         bl enable
         bl espera_done
+        bl t_inst
 
         @ adicionar retorno em espera done indicando tbm erro
         @ e entao uma comparação aqui para tratar erro
@@ -373,8 +376,7 @@ get_flag_error:
         bl str_bias @guarda no pio ins
         bl enable
         bl espera_done
-        cmp r2, #0
-        bne finalizar_erro
+        bl t_inst
         
         @ adicionar retorno em espera done indicando tbm erro
         @ e entao uma comparação aqui para tratar erro
@@ -421,8 +423,8 @@ get_flag_error:
         bl str_beta @guarda no pio ins
         bl enable
         bl espera_done
-        cmp r2, #0
-        bne finalizar_erro
+        bl t_inst
+
         @ adicionar retorno em espera done indicando tbm erro
         @ e entao uma comparação aqui para tratar erro
         add r1, #1
@@ -541,3 +543,16 @@ falha:
         mov r7, #1
         mov r0, #1
         svc #0
+
+.global t_inst
+.type t_clocks, %function
+    t_clocks:
+        add r10, r10, #1
+        bx lr
+
+.global total_inst
+.type total_inst, %function
+    total_inst:
+        push {lr}
+        mov r0, r10
+        pop {pc}
