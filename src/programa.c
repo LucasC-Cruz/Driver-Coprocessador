@@ -63,6 +63,7 @@ int main() {
             //número de instruções de memória * 5 +  clocks primeira camada (32 * 18844) + clocks segunda camada 2*(18844) + 
             // clocks argmax 10 + clock de controle 2
             totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
+            printf("\nNúmero de clocks: %d\n", totalClocks);
 
             printf("\nResultado inferência: %d\n", totalClocks);
 
