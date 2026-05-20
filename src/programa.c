@@ -4,6 +4,7 @@
 #include "colors.h"
 #include "api.h"
 
+#include <string.h>
 
 
 int main() {
@@ -39,9 +40,6 @@ int main() {
         printf("\n%s[1] realizar a inferência da imagem definida%s\n", YELLOW, RESET);
         printf("\n%s[2] trocar a imagem de inferência%s\n", BLUE, RESET);
         printf("\n%s[3] para sair%s\n", CYAN, RESET);
-        reset(hps_virtual);
-        iniciar(hps_virtual);
-
 
     while(loop==1) {
         printf("\n%s=>%s ", YELLOW, RESET);
@@ -50,7 +48,9 @@ int main() {
             printf("\n========================================================\n");
             printf("\n[1] realizar a inferência da imagem definida\n");
             printf("\n[2] trocar a imagem de inferência\n");
-            printf("\n[3] para sair\n");
+            printf("\n[3] Teste de estabilidade inferencias\n");
+            
+            printf("\n[4] para sair\n");
 
             iniciar(hps_virtual);
             result = get_resultado(hps_virtual);
@@ -69,7 +69,32 @@ int main() {
 
         }else if (inst ==2){
             printf("\nFunção não implementada para o Marco 2\n");
-        }else{printf("\nFinalizando o programa\n"); loop=0;}
+        }else if (inst==3){
+            int esperado;
+            printf("\nResultado esperado:\n");
+
+            scanf("%d", &esperado);
+
+            int num, acertos=0;
+            printf("\nDigite o número de inferencias a fazer:\n");
+            scanf("%d", &num);
+            int i;
+            for (i = 0; i < num; i++)
+            {
+                
+                iniciar(hps_virtual);
+                result = get_resultado(hps_virtual);
+                printf("\nResultado da %d inferência:%d\n", i+1 , result);
+                if (result == esperado){
+                    acertos++;
+                    }
+            }
+            printf("\nAcertou %d de %d\n", acertos, num);
+            float taxa = (acertos/num)*100;
+            printf("\nTaxa de acerto: %f porcento\n", taxa);
+
+        }
+        else{printf("\nFinalizando o programa\n"); loop=0;}
     }
 
    
