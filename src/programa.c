@@ -13,6 +13,8 @@ int main() {
     int a;
     int result;
     int loop=1;
+    int num_inst;
+    int totalClocks;
     printf("\n============================\nOlá! Iniciando Coprocessador\n============================\n");
     void* hps_virtual = mapear();
 
@@ -25,36 +27,44 @@ int main() {
     printf("\n============================\n Iniciando Memória\n============================\n");
     printf("\nCarregando Bias na memória do Coprocessador...");
     store_bias(hps_virtual);//nunca vai dar erro pq o codamos bem :)
+
     printf("\nCarregando Beta na memória do Coprocessador...");
     store_beta(hps_virtual);
 
     printf("\nCarregando Pesos na memória do Coprocessador...");
     store_pesos(hps_virtual);
 
-
-    printf("\nPré carregando imagem padrão 4...\n");
+    printf("\nPré carregando imagem padrão...\n");
     store_image(hps_virtual);
 
 
     
-        printf("\n%s[1] realizar a inferência da imagem definida%s\n", YELLOW, RESET);
-        printf("\n%s[2] trocar a imagem de inferência%s\n", BLUE, RESET);
-        printf("\n%s[3] para sair%s\n", CYAN, RESET);
+        printf("%s[1] realizar a inferência da imagem definida%s", YELLOW, RESET);
+        printf("%s[2] trocar a imagem de inferência%s", BLUE, RESET);
+        printf("%s[3] para sair%s", CYAN, RESET);
 
     while(loop==1) {
         printf("\n%s=>%s ", YELLOW, RESET);
         scanf("%d", &inst);
         if(inst == 1){
             printf("\n========================================================\n");
-            printf("\n[1] realizar a inferência da imagem definida\n");
-            printf("\n[2] trocar a imagem de inferência\n");
-            printf("\n[3] Teste de estabilidade inferencias\n");
+            printf("[1] realizar a inferência da imagem definida");
+            printf("[2] trocar a imagem de inferência");
+            printf("[3] Teste de estabilidade inferencias");
             
-            printf("\n[4] para sair\n");
+            printf("[4] para sair\n");
 
             iniciar(hps_virtual);
             result = get_resultado(hps_virtual);
-            printf("\nResultado inferência:%d\n", result);
+            printf("\nResultado inferência: %d\n", result);
+
+            num_inst = total_inst();
+            
+            //número de instruções de memória * 5 +  clocks primeira camada (32 * 18844) + clocks segunda camada 2*(18844) + 
+            // clocks argmax 10 + clock de controle 2
+            totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
+
+            printf("\nResultado inferência: %d\n", totalClocks);
 
             done = get_flag_done(hps_virtual); 
             printf("\nFlag de done: %d \n", done);
@@ -95,9 +105,7 @@ int main() {
 
         }
         else{printf("\nFinalizando o programa\n"); loop=0;}
-    }
-
-   
+    }   
     fechar(hps_virtual);
     printf("\nMapeamento encerrado.\n");
     

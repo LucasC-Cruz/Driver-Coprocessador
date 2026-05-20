@@ -23,3 +23,6 @@ extern void store_image(void* hps_virtual);
 extern void store_bias(void* hps_virtual);
 extern void store_beta(void* hps_virtual);
 extern void store_pesos(void* hps_virtual);
+
+
+extern int total_inst();

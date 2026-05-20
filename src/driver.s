@@ -545,8 +545,8 @@ falha:
         svc #0
 
 .global t_inst
-.type t_clocks, %function
-    t_clocks:
+.type t_inst, %function
+    t_inst:
         add r10, r10, #1
         bx lr
 
