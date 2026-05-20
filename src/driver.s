@@ -34,7 +34,8 @@
 
 .section .data
 dev_mem: .asciz "/dev/mem"
-image_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/binImg/imagem_4.bin"
+@ 3, 5, estão inferindo 7
+image_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/binImg/imagem_9.bin"
 bias_filename:  .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/b_q_invertido.bin"
 betas_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/beta_q_invertido.bin"
 pesos_filename: .asciz "/home/aluno/TEC499/TP02/G0Paulo/Driver-Coprocessador/data/W_in_invertido.bin"
@@ -197,8 +198,6 @@ str_bias:
     @bl clear_operation
     push {r1, r2, lr}       @push r1 para não alterar endereco que sera incrementado depois
     lsl r1, r1, #3      @r1 agr tem o endereço no campo correto 
-    cmp r2, #128
-    bge finalizar_erro
     lsl r2, r2, #10     @dado lido no campo de dado 
     orr r1, r1, r2      @soma todos os bits em um ergistrador
     add r1, r1, #3      @soma op code de store bias
@@ -354,7 +353,7 @@ get_flag_error:
 
         mov r7, #SYSCALL_READ       
         ldr r1, =bias_buffer     
-        mov r2, #128              @ Quantos bytes vai ler
+        mov r2, #256              @ Quantos bytes vai ler
         svc #0      
                         @ Buffer foi preenchido com dados do arquivo
         
@@ -380,7 +379,7 @@ get_flag_error:
         @ adicionar retorno em espera done indicando tbm erro
         @ e entao uma comparação aqui para tratar erro
         add r1, #1
-        cmp r1, #130
+        cmp r1, #128
         bne store_bias_loop
 
     @fechar
