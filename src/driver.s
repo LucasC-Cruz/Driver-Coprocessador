@@ -144,6 +144,7 @@ confirmar:
 .type iniciar, %function
 iniciar:
     push {lr}
+    mov r10, #0
     @r0 deve ser o hps_virtual
     mov r1, #5
     str r1, [r0, #PIO_INSTRUCTION]
@@ -473,6 +474,7 @@ get_flag_error:
         bl str_weight @possiblidade de apatar str_weight para usar r2, retirando mov  
         bl enable
         bl espera_done
+        bl t_inst
         cmp r2, #0      @retorno de espera_done diz se houve erro ou não
         bne finalizar_erro
 
@@ -556,3 +558,11 @@ falha:
         push {lr}
         mov r0, r10
         pop {pc}
+
+.global zera_inst
+.type zera_inst, %function
+    zera_inst:
+        push {lr}
+        mov r10, #0
+        pop {pc}
+
