@@ -35,7 +35,7 @@
 .section .data
 dev_mem: .asciz "/dev/mem"
 @ 3, 5, estão inferindo 7
-image_filename: .asciz "imagem_9.bin"
+image_filename: .asciz "imagem_5_2.bin"
 bias_filename:  .asciz "b_q_invertido.bin"
 betas_filename: .asciz "beta_q_invertido.bin"
 pesos_filename: .asciz "W_in_invertido.bin"

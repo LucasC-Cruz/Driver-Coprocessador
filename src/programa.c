@@ -13,8 +13,6 @@ int main() {
     int a;
     int result;
     int loop=1;
-    int num_inst;
-    int totalClocks;
     printf("\n============================\nOlá! Iniciando Coprocessador\n============================\n");
     void* hps_virtual = mapear();
 
@@ -22,6 +20,9 @@ int main() {
         printf("Erro ao mapear memória");
         return 1;
     }
+
+    zera_inst();
+
     printf("\nMemória mapeada no endereço: %p\n", hps_virtual);
 
     printf("\n============================\n Iniciando Memória\n============================\n");
@@ -37,28 +38,35 @@ int main() {
     printf("\nPré carregando imagem padrão...\n");
     store_image(hps_virtual);
 
+    int num_inst = total_inst();
+    
+    reset(hps_virtual);
+    iniciar(hps_virtual);
+
+    
+
     do
     {
         printf("\n========================================================\n");
-        printf("[1] realizar a inferência da imagem prédefinida\n");
-        printf("[2] trocar a imagem de inferência\n");
-        printf("[3] Teste de estabilidade inferencias\n");
+        printf("%s[1] realizar a inferência da imagem prédefinida%s\n", YELLOW, RESET);
+        printf("%s[2] trocar a imagem de inferência%s\n", YELLOW, RESET);
+        printf("%s[3] Teste de estabilidade inferencias%s\n", YELLOW, RESET);
 
 
-        printf("[4] Resetar o Coprocessador\n");
-        printf("[5] Clear operation\n");
-        printf("[6] Enviar operação NOP\n");
-        printf("[7] Enviar instrução personalizada\n");
-        printf("[9] Enviar pixel\n");
-        printf("[8] Enviar peso\n");
-        printf("[10] Enviar bias\n");
-        printf("[11] Enviar beta\n");
-        printf("[12] Confirmar operação enviada\n");
+        printf("%s[4] Resetar o Coprocessador%s\n", RED, RESET);
+        printf("%s[5] Clear operation%s\n", RED, RESET);
+        printf("%s[6] Enviar operação NOP%s\n", GREEN, RESET);
+        printf("%s[7] Enviar instrução personalizada%s\n", GREEN, RESET);
+        printf("%s[9] Enviar pixel%s\n", GREEN, RESET);
+        printf("%s[8] Enviar peso%s\n", GREEN, RESET);
+        printf("%s[10] Enviar bias%s\n", GREEN, RESET);
+        printf("%s[11] Enviar beta%s\n", GREEN, RESET);
+        printf("%s[12] Confirmar operação enviada%s\n", GREEN, RESET);
 
-        printf("[13] Reenviar imagem prédefinida\n");
-        printf("[14] Reenviar bias\n");
-        printf("[15] Reenviar beta\n");
-        printf("[16] Reenviar pesos\n");
+        printf("%s[13] Reenviar imagem prédefinida\n%s", CYAN, RESET);
+        printf("%s[14] Reenviar bias\n%s", CYAN, RESET);
+        printf("%s[15] Reenviar beta\n%s", CYAN, RESET);
+        printf("%s[16] Reenviar pesos\n%s", CYAN, RESET);
 
         printf("\n========================================================\n");
         printf("[0] para sair\n");
@@ -80,14 +88,13 @@ int main() {
                 result = get_resultado(hps_virtual);
                 printf("\nResultado inferência: %d\n", result);
 
-                num_inst = total_inst();
                 
+                printf("\nNúmero de instruções de memória enviadas: %d\n", num_inst);
+
                 //número de instruções de memória * 5 +  clocks primeira camada (32 * 18844) + clocks segunda camada 2*(18844) + 
                 // clocks argmax 10 + clock de controle 2
-                totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
+                int totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
                 printf("\nNúmero de clocks: %d\n", totalClocks);
-
-                printf("\nResultado inferência: %d\n", totalClocks);
 
                 done = get_flag_done(hps_virtual); 
                 printf("\nFlag de done: %d \n", done);
@@ -147,6 +154,7 @@ int main() {
             case 5:
             {
                 clear_operation(hps_virtual);
+                enable(hps_virtual);
                 printf("\nOperação limpa\n");
                 break;
             }
@@ -155,6 +163,7 @@ int main() {
             case 6:
             {
                 NO_OP(hps_virtual);
+                enable(hps_virtual);
                 printf("\nOperação NOP enviada\n");
                 break;
             }
@@ -165,7 +174,8 @@ int main() {
                 int custom_inst;
                 printf("\nDigite a instrução personalizada (em decimal):\n");
                 scanf("%d", &custom_inst);
-                instrucao(hps_virtual, custom_inst);
+                instruction(hps_virtual, custom_inst);
+                enable(hps_virtual);
                 printf("\nInstrução personalizada enviada\n");
                 break;
             }
@@ -179,6 +189,7 @@ int main() {
                 printf("\nDigite o valor do pixel (em decimal):\n");
                 scanf("%d", &pixel);
                 str_img(hps_virtual, endereco, pixel);
+                enable(hps_virtual);
                 printf("\nPixel enviado\n");
                 break;
             }
@@ -192,7 +203,9 @@ int main() {
                 printf("\nDigite o valor do peso (em decimal):\n");
                 scanf("%d", &peso);
                 str_wadress(hps_virtual, endereco);
+                enable(hps_virtual);
                 str_weight(hps_virtual, 0, peso);
+                enable(hps_virtual);
                 printf("\nPeso enviado\n");
                 break;
             }
@@ -206,6 +219,7 @@ int main() {
                 printf("\nDigite o valor do bias (em decimal):\n");
                 scanf("%d", &bias);
                 str_bias(hps_virtual, endereco, bias);
+                enable(hps_virtual);
                 printf("\nBias enviado\n");
                 break;
             }
@@ -219,6 +233,7 @@ int main() {
                 printf("\nDigite o valor do beta (em decimal):\n");
                 scanf("%d", &beta);
                 str_beta(hps_virtual, endereco, beta);
+                enable(hps_virtual);
                 printf("\nBeta enviado\n");
                 break;
             }
@@ -226,8 +241,8 @@ int main() {
             //Confirmar operação enviada
             case 12:
             {
-                long long int ope = confirmar(hps_virtual);
-                printf("\nOperação enviada: %lld\n", ope);
+                long int ope = confirmar(hps_virtual);
+                printf("\nOperação enviada: %ld\n", ope);
                 break;
             }
 
