@@ -236,11 +236,11 @@ str_wadress:
 .type str_weight, %function
 str_weight:
     @r0 deve ser o hps_virtual
-    push {lr}
+    push {r1, lr}
     lsl r2, r2, #3      @r1 agr tem o dado no campo correto 
     add r2, r2, #2      @soma op code de store weigth
     str r2, [r0, #PIO_INSTRUCTION]  @guarda instrucao no pio       
-    pop {pc}
+    pop {r1, pc}
 
 @ ==================== FLAGS ==================== 
 

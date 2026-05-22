@@ -37,76 +37,235 @@ int main() {
     printf("\nPré carregando imagem padrão...\n");
     store_image(hps_virtual);
 
+    do
+    {
+        printf("\n========================================================\n");
+        printf("[1] realizar a inferência da imagem prédefinida\n");
+        printf("[2] trocar a imagem de inferência\n");
+        printf("[3] Teste de estabilidade inferencias\n");
 
-    
-        printf("%s[1] realizar a inferência da imagem definida%s", YELLOW, RESET);
-        printf("%s[2] trocar a imagem de inferência%s", BLUE, RESET);
-        printf("%s[3] para sair%s", CYAN, RESET);
 
-    while(loop==1) {
+        printf("[4] Resetar o Coprocessador\n");
+        printf("[5] Clear operation\n");
+        printf("[6] Enviar operação NOP\n");
+        printf("[7] Enviar instrução personalizada\n");
+        printf("[9] Enviar pixel\n");
+        printf("[8] Enviar peso\n");
+        printf("[10] Enviar bias\n");
+        printf("[11] Enviar beta\n");
+        printf("[12] Confirmar operação enviada\n");
+
+        printf("[13] Reenviar imagem prédefinida\n");
+        printf("[14] Reenviar bias\n");
+        printf("[15] Reenviar beta\n");
+        printf("[16] Reenviar pesos\n");
+
+        printf("\n========================================================\n");
+        printf("[0] para sair\n");
+
         printf("\n%s=>%s ", YELLOW, RESET);
         scanf("%d", &inst);
-        if(inst == 1){
-            printf("\n========================================================\n");
-            printf("[1] realizar a inferência da imagem definida");
-            printf("[2] trocar a imagem de inferência");
-            printf("[3] Teste de estabilidade inferencias");
-            
-            printf("[4] para sair\n");
 
-            iniciar(hps_virtual);
-            result = get_resultado(hps_virtual);
-            printf("\nResultado inferência: %d\n", result);
-
-            num_inst = total_inst();
-            
-            //número de instruções de memória * 5 +  clocks primeira camada (32 * 18844) + clocks segunda camada 2*(18844) + 
-            // clocks argmax 10 + clock de controle 2
-            totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
-            printf("\nNúmero de clocks: %d\n", totalClocks);
-
-            printf("\nResultado inferência: %d\n", totalClocks);
-
-            done = get_flag_done(hps_virtual); 
-            printf("\nFlag de done: %d \n", done);
-
-            busy = get_flag_busy(hps_virtual); 
-            printf("Flag de busy: %d \n", busy);
-            
-            error = get_flag_error(hps_virtual);    
-            printf("Flag de erro: %d \n", error);
-
-            printf("\n========================================================\n");
-
-        }else if (inst ==2){
-            printf("\nFunção não implementada para o Marco 2\n");
-        }else if (inst==3){
-            int esperado;
-            printf("\nResultado esperado:\n");
-
-            scanf("%d", &esperado);
-
-            int num, acertos=0;
-            printf("\nDigite o número de inferencias a fazer:\n");
-            scanf("%d", &num);
-            int i;
-            for (i = 0; i < num; i++)
+        switch (inst)
+        {
+            case 0:
             {
-                
+                printf("\nFinalizando o programa\n"); 
+                loop=0;
+            }
+            //realizar a inferência da imagem definida
+            case 1:
+            {
                 iniciar(hps_virtual);
                 result = get_resultado(hps_virtual);
-                printf("\nResultado da %d inferência:%d\n", i+1 , result);
-                if (result == esperado){
-                    acertos++;
-                    }
+                printf("\nResultado inferência: %d\n", result);
+
+                num_inst = total_inst();
+                
+                //número de instruções de memória * 5 +  clocks primeira camada (32 * 18844) + clocks segunda camada 2*(18844) + 
+                // clocks argmax 10 + clock de controle 2
+                totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
+                printf("\nNúmero de clocks: %d\n", totalClocks);
+
+                printf("\nResultado inferência: %d\n", totalClocks);
+
+                done = get_flag_done(hps_virtual); 
+                printf("\nFlag de done: %d \n", done);
+
+                busy = get_flag_busy(hps_virtual); 
+                printf("Flag de busy: %d \n", busy);
+                
+                error = get_flag_error(hps_virtual);    
+                printf("Flag de erro: %d \n", error);
+
+                printf("\n========================================================\n");
+                break;
             }
-            printf("\nAcertou %d de %d\n", acertos, num);
-            float taxa = (acertos/num)*100;
-            printf("\nTaxa de acerto: %f porcento\n", taxa);
+
+            //trocar a imagem de inferência
+            case 2:
+                printf("\nFunção não implementada para o Marco 2\n");
+            break;
+
+            //Teste de estabilidade inferencias
+            case 3:
+            {
+                int esperado;
+                printf("\nResultado esperado:\n");
+
+                scanf("%d", &esperado);
+
+                int num, acertos=0;
+                printf("\nDigite o número de inferencias a fazer:\n");
+                scanf("%d", &num);
+                int i;
+                for (i = 0; i < num; i++)
+                {
+                    iniciar(hps_virtual);
+                    result = get_resultado(hps_virtual);
+                    printf("\nResultado da %d inferência:%d\n", i+1 , result);
+                    if (result == esperado)
+                    {
+                        acertos++;
+                    }
+                }
+                printf("\nAcertou %d de %d\n", acertos, num);
+                float taxa = (acertos/num)*100;
+                printf("\nTaxa de acerto: %f porcento\n", taxa);
+                break;
+            }
+            
+            //Resetar o Coprocessador
+            case 4:
+            {
+                reset(hps_virtual);
+                printf("\nCoprocessador resetado\n");
+                break;
+            }
+            
+            //Clear operation
+            case 5:
+            {
+                clear_operation(hps_virtual);
+                printf("\nOperação limpa\n");
+                break;
+            }
+
+            //Enviar operação NOP
+            case 6:
+            {
+                NO_OP(hps_virtual);
+                printf("\nOperação NOP enviada\n");
+                break;
+            }
+
+            //Enviar instrução personalizada
+            case 7:
+            {
+                int custom_inst;
+                printf("\nDigite a instrução personalizada (em decimal):\n");
+                scanf("%d", &custom_inst);
+                instrucao(hps_virtual, custom_inst);
+                printf("\nInstrução personalizada enviada\n");
+                break;
+            }
+
+            //Enviar pixel
+            case 9:
+            {
+                int endereco, pixel;
+                printf("\nDigite o endereço para o pixel (em decimal):\n");
+                scanf("%d", &endereco);
+                printf("\nDigite o valor do pixel (em decimal):\n");
+                scanf("%d", &pixel);
+                str_img(hps_virtual, endereco, pixel);
+                printf("\nPixel enviado\n");
+                break;
+            }
+
+            //Enviar peso
+            case 8:
+            {
+                int endereco, peso;
+                printf("\nDigite o endereço para o peso (em decimal):\n");
+                scanf("%d", &endereco);
+                printf("\nDigite o valor do peso (em decimal):\n");
+                scanf("%d", &peso);
+                str_wadress(hps_virtual, endereco);
+                str_weight(hps_virtual, 0, peso);
+                printf("\nPeso enviado\n");
+                break;
+            }
+
+            //Enviar bias
+            case 10:
+            {
+                int endereco, bias;
+                printf("\nDigite o endereço para o bias (em decimal):\n");
+                scanf("%d", &endereco);
+                printf("\nDigite o valor do bias (em decimal):\n");
+                scanf("%d", &bias);
+                str_bias(hps_virtual, endereco, bias);
+                printf("\nBias enviado\n");
+                break;
+            }
+
+            //Enviar beta
+            case 11:
+            {
+                int endereco, beta;
+                printf("\nDigite o endereço para o beta (em decimal):\n");
+                scanf("%d", &endereco);
+                printf("\nDigite o valor do beta (em decimal):\n");
+                scanf("%d", &beta);
+                str_beta(hps_virtual, endereco, beta);
+                printf("\nBeta enviado\n");
+                break;
+            }
+
+            //Confirmar operação enviada
+            case 12:
+            {
+                long long int ope = confirmar(hps_virtual);
+                printf("\nOperação enviada: %lld\n", ope);
+                break;
+            }
+
+            case 13:
+            {
+                store_image(hps_virtual);
+                printf("\nImagem prédefinida reenviada\n");
+                break;
+            }
+
+            case 14:
+            {
+                store_bias(hps_virtual);
+                printf("\nBias reenviado\n");
+                break;
+            }
+
+            case 15:
+            {
+                store_beta(hps_virtual);
+                printf("\nBeta reenviado\n");
+                break;
+            }
+
+            case 16:
+            {
+                store_pesos(hps_virtual);
+                printf("\nPesos reenviados\n");
+                break;
+            }
+            default :
+                printf("\nOpção inválida. Tente novamente.\n");
+                break;
 
         }
-        else{printf("\nFinalizando o programa\n"); loop=0;}
-    }   
+
+    } while (loop==1);
+    
     fechar(hps_virtual);
     printf("\nMapeamento encerrado.\n");
     
