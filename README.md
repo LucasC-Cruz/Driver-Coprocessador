@@ -245,7 +245,7 @@ Taxa de acerto: 100.000000 porcento
 
 **Estabilidade:** 100 inferências consecutivas com 100% de acerto, validando a corretude do protocolo de handshaking (enable/done) e a ausência de corrupção de estado entre execuções.
 
-**Desempenho estimado:** o número de clocks por inferência é calculado como `(N_inst x 5) + (128 x 18.844) + (2 x 18.844) + 12`, onde N_inst = 102.544 instruções de memória montadas e enviadas pelo driver, resultando em aproximadamente 2.964.932 clocks. A 50 MHz, isso equivale a cerca de 59 ms por inferência.
+**Desempenho estimado:** o número de clocks por inferência é calculado como `(N_inst x 5) + (32 x 18.844) + (2 x 18.844) + 12`, onde N_inst = 102.544 instruções de memória montadas e enviadas pelo driver, resultando em 1.153.428 clocks. A 50 Mhz
 
 **Limitação identificada:** o driver utiliza busy-wait (`espera_done`) durante a inferência, bloqueando o HPS. Uma abordagem baseada em interrupções reduziria o overhead de CPU em execuções futuras.
 
