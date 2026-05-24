@@ -113,7 +113,7 @@ Driver-Coprocessador/
         │   ├── second_layer.v         # Camada de saída (10 neurônios)
         │   ├── argmax_iterativo.v     # Módulo argmax iterativo
         │   └── neural_unit.v          # Orquestrador das duas camadas
-        ├── memorias/           # Arquivos MIF para inicialização das BRAMs
+        ├── memorias/           
         │   ├── W_in_q.mif
         │   ├── b_q.mif
         │   └── beta_q.mif
