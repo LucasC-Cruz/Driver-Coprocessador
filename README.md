@@ -105,7 +105,7 @@ scp coprocessador W_in_invertido.bin b_q_invertido.bin beta_q_invertido.bin imag
 
 ### 4.4 Programação da FPGA
 
-1. Abra o projeto no Quartus Prime com os arquivos `.mif` no diretório do projeto.
+1. Abra o projeto no Quartus Prime com os arquivos `Do coprocessador` no diretório do projeto.
 2. Compile: **Processing → Start Compilation**.
 3. Grave: **Tools → Programmer** → selecione o `.sof` → **Start**.
 
