@@ -53,6 +53,7 @@ Implementação do driver Linux em Assembly ARM para controle do coprocessador d
 |---|---|---|
 | Intel Quartus Prime | 18.1 | Síntese, integração HPS↔FPGA e programação da FPGA |
 | arm-linux-gnueabihf-gcc | >= 7.x | Compilação cruzada do driver Assembly + programa C |
+| Visual Studio Code | >= 1.1 | Ambiente de Desenvolvimento |
 | Linux (ARM) | Kernel >= 4.x | SO rodando no HPS da DE1-SoC |
 
 **Hardware:** Terasic DE1-SoC (Cyclone V FPGA + ARM Cortex-A9 dual-core)
