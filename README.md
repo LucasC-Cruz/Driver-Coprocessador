@@ -8,7 +8,7 @@ Implementação do driver Linux em Assembly ARM para controle do coprocessador d
 
 - [1. Levantamento de Requisitos](#1-levantamento-de-requisitos)
 - [2. Softwares Utilizados](#2-softwares-utilizados)
-- [3. Arquivos do Projeto](#3-arquivos-do-projeto)
+- [3. Estrutura do Repositório](#3-estrutura-do-repositório)
 - [4. Configuração do Ambiente e Compilação](#4-configuração-do-ambiente-e-compilação)
 - [5. Mapeamento de Memória e PIOs](#5-mapeamento-de-memória-e-pios)
 - [6. Conjunto de Instruções](#6-conjunto-de-instruções)
@@ -53,7 +53,6 @@ Implementação do driver Linux em Assembly ARM para controle do coprocessador d
 |---|---|---|
 | Intel Quartus Prime | 18.1 | Síntese, integração HPS↔FPGA e programação da FPGA |
 | arm-linux-gnueabihf-gcc | >= 7.x | Compilação cruzada do driver Assembly + programa C |
-| Visual Studio Code | >= 1.1 | Ambiente de Desenvolvimento |
 | Linux (ARM) | Kernel >= 4.x | SO rodando no HPS da DE1-SoC |
 
 **Hardware:** Terasic DE1-SoC (Cyclone V FPGA + ARM Cortex-A9 dual-core)
@@ -63,18 +62,64 @@ Implementação do driver Linux em Assembly ARM para controle do coprocessador d
 ---
 
 <details>
-<summary><h2>3. Arquivos do Projeto</h2></summary>
+<summary><h2>3. Estrutura do Repositório</h2></summary>
 
-| Arquivo | Descrição |
-|---|---|
-| `driver.s` | Driver em Assembly ARM: mapeamento de memória, PIOs, carregamento de dados, flags |
-| `api.h` | Declarações da API C que expõe as funções do driver |
-| `programa.c` | Interface interativa de linha de comando para controle e testes |
-| `colors.h` | Macros de cores ANSI para terminal |
-| `W_in_invertido.bin` | Pesos quantizados (Q4.12, 16 bits, 100.352 entradas) |
-| `b_q_invertido.bin` | Bias quantizados (16 bits, 128 entradas) |
-| `beta_q_invertido.bin` | Parâmetros β de batch normalization (16 bits, 1.280 entradas) |
-| `imagem_4.bin` | Imagem de teste padrão (dígito "4", 784 bytes) |
+```
+Driver-Coprocessador/
+│
+├── src/                        # Código-fonte principal
+│   ├── driver.s                # Driver em Assembly ARM (mapeamento, PIOs, carregamento, flags)
+│   ├── api.h                   # Declarações da API C que expõe as funções do driver
+│   ├── programa.c              # Interface interativa de linha de comando para controle e testes
+│   └── colors.h                # Macros de cores ANSI para terminal
+│
+├── data/                       # Parâmetros da rede neural e imagens de teste
+│   ├── W_in_q.mif              # Pesos quantizados (Q4.12) — formato MIF para inicialização da FPGA
+│   ├── W_in_invertido.bin      # Pesos em binário (ordem invertida para carga sequencial pelo HPS)
+│   ├── b_q.mif                 # Bias — formato MIF
+│   ├── b_q_invertido.bin       # Bias em binário
+│   ├── beta_q.mif              # Parâmetros β de batch normalization — formato MIF
+│   ├── beta_q_invertido.bin    # Parâmetros β em binário
+│   └── imagem_4.bin            # Imagem de teste padrão (dígito "4", 784 bytes)
+│
+├── Test/                       # Testes unitários e de integração do driver
+│   ├── BiasInstruction.s       # Teste em Assembly: valida o envio isolado de instruções de bias
+│   ├── LerBinEmC.c             # Teste em C: leitura e verificação dos arquivos binários de dados
+│   └── testeInitFiles.c        # Teste em C: verifica inicialização do hardware e carregamento dos arquivos
+│
+├── utils/                      # Utilitários de apoio ao desenvolvimento
+│   ├── BinToTer.py             # Script Python: lê um arquivo binário e imprime o valor do primeiro byte em decimal, hexadecimal e binário
+│   ├── inout.s                 # Utilitário Assembly: rotinas auxiliares de entrada/saída (buffer de saída e syscalls)
+│   └── mifToBin                # Conversor: transforma arquivos .mif em .bin para uso pelo HPS
+│
+└── quartus/                    # Projeto Quartus Prime (integração HPS↔FPGA)
+    └── my_first_hps-fpga_base/
+        ├── soc_system.qpf      # Arquivo de projeto Quartus
+        ├── soc_system.qsf      # Atribuições de pinos e configurações
+        ├── soc_system.qsys     # Descrição do sistema (Platform Designer)
+        ├── ghrd_top.v          # Toplevel do projeto RTL
+        ├── CoProcessor.v       # Módulo principal do coprocessador ELM
+        ├── ELM_on_DE1_SoC.v   # Integração do ELM na plataforma DE1-SoC
+        ├── aux_files/          # Módulos auxiliares do datapath
+        │   ├── mac_first_layer.v      # MAC da primeira camada
+        │   ├── mac_second_layer.v     # MAC da segunda camada
+        │   ├── tanh_pwl_q4_12.v      # Ativação tanh por piecewise linear em Q4.12
+        │   ├── reg_bank128.v          # Banco de registradores de 128 posições
+        │   ├── reg_bank10.v           # Banco de registradores de 10 posições
+        │   ├── lsu_controller.v       # Controlador de acesso à memória
+        │   └── display_resultado.v    # Exibição do resultado nos LEDs/display
+        ├── inference_unit/     # Unidade de inferência neural
+        │   ├── first_layer.v          # Camada oculta (128 neurônios)
+        │   ├── second_layer.v         # Camada de saída (10 neurônios)
+        │   ├── argmax_iterativo.v     # Módulo argmax iterativo
+        │   └── neural_unit.v          # Orquestrador das duas camadas
+        ├── memorias/           # Arquivos MIF para inicialização das BRAMs
+        │   ├── W_in_q.mif
+        │   ├── b_q.mif
+        │   └── beta_q.mif
+        └── output_files/       # Arquivos gerados pela compilação do Quartus
+            └── soc_system.sof  # Bitstream para gravação na FPGA
+```
 
 </details>
 
@@ -93,21 +138,21 @@ sudo apt-get install gcc-arm-linux-gnueabihf
 ### 4.2 Compilação cruzada
 
 ```bash
-arm-linux-gnueabihf-gcc -o coprocessador programa.c driver.s
+arm-linux-gnueabihf-gcc -o coprocessador src/programa.c src/driver.s
 ```
 
 ### 4.3 Transferência para a DE1-SoC
 
 ```bash
-scp coprocessador W_in_invertido.bin b_q_invertido.bin beta_q_invertido.bin imagem_4.bin \
+scp coprocessador data/W_in_invertido.bin data/b_q_invertido.bin data/beta_q_invertido.bin data/imagem_4.bin \
     usuario@<IP_DA_PLACA>:~/coprocessador/
 ```
 
 ### 4.4 Programação da FPGA
 
-1. Abra o projeto no Quartus Prime com os arquivos `Do coprocessador` no diretório do projeto.
+1. Abra o projeto no Quartus Prime com os arquivos `.mif` em `quartus/my_first_hps-fpga_base/memorias/`.
 2. Compile: **Processing → Start Compilation**.
-3. Grave: **Tools → Programmer** → selecione o `.sof` → **Start**.
+3. Grave: **Tools → Programmer** → selecione `output_files/soc_system.sof` → **Start**.
 
 </details>
 
