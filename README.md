@@ -213,7 +213,7 @@ O programa carrega automaticamente pesos, bias, beta e a imagem padrão na inici
 
 O programa exibe o seguinte menu interativo:
 
-![Menu do Coprocessador](menu_drivercoprocessador.jpeg)
+![Menu do Coprocessador](menudrivercoprocessador.jpeg)
 
 ### 7.2 Teste de Inferência Única (Opção 1)
 
