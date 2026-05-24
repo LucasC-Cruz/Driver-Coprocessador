@@ -242,8 +242,7 @@ module CoProcessor(
 	 .MEM_SIZE(128), 
 	 .CYCLES_PER_OP(3), 
 	 .DEVICE_FAMILY("Cyclone V"), 
-	 .RAM_TYPE("AUTO"),
-	 .INIT_FILE("memorias/b_q.mif")) mem_bias(
+	 .RAM_TYPE("AUTO")) mem_bias(
         .addr_write(addr_bias_register), 
 		  .addr_read(addr_bias_read), 
 		  .clk(clk),
@@ -259,8 +258,7 @@ module CoProcessor(
 	 .MEM_SIZE(1280), 
 	 .CYCLES_PER_OP(3), 
 	 .DEVICE_FAMILY("Cyclone V"), 
-	 .RAM_TYPE("AUTO"),
-	 .INIT_FILE("memorias/beta.mif")) mem_beta(
+	 .RAM_TYPE("AUTO")) mem_beta(
         .addr_write(addr_beta_register), 
 		  .addr_read(addr_beta_read), 
 		  .clk(clk),
@@ -276,8 +274,7 @@ module CoProcessor(
 	 .MEM_SIZE(100352), 
 	 .CYCLES_PER_OP(3), 
 	 .DEVICE_FAMILY("Cyclone V"), 
-	 .RAM_TYPE("AUTO"),
-	 .INIT_FILE("memorias/W_in_q.mif")) mem_weigth(
+	 .RAM_TYPE("AUTO")) mem_weigth(
         .addr_write(addr_weigth_register), 
 		  .addr_read(addr_weigth_read), 
 		  .clk(clk),
