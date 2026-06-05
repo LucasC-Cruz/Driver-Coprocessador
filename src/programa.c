@@ -8,11 +8,12 @@
 
 
 int main() {
-    bool done, busy, error;
     int inst;
+    int loop=1;
+    /*
+    bool done, busy, error;
     int a;
     int result;
-    int loop=1;
     printf("\n============================\nOlá! Iniciando Coprocessador\n============================\n");
     void* hps_virtual = mapear();
 
@@ -20,7 +21,6 @@ int main() {
         printf("Erro ao mapear memória");
         return 1;
     }
-
     zera_inst();
 
     printf("\nMemória mapeada no endereço: %p\n", hps_virtual);
@@ -44,32 +44,17 @@ int main() {
     iniciar(hps_virtual);
 
     
-
+*/
     do
     {
-        printf("\n========================================================\n");
-        printf("%s[1] realizar a inferência da imagem prédefinida%s\n", YELLOW, RESET);
-        printf("%s[2] trocar a imagem de inferência%s\n", YELLOW, RESET);
-        printf("%s[3] Teste de estabilidade inferencias%s\n", YELLOW, RESET);
-
-
-        printf("%s[4] Resetar o Coprocessador%s\n", RED, RESET);
-        printf("%s[5] Clear operation%s\n", RED, RESET);
-        printf("%s[6] Enviar operação NOP%s\n", GREEN, RESET);
-        printf("%s[7] Enviar instrução personalizada%s\n", GREEN, RESET);
-        printf("%s[9] Enviar pixel%s\n", GREEN, RESET);
-        printf("%s[8] Enviar peso%s\n", GREEN, RESET);
-        printf("%s[10] Enviar bias%s\n", GREEN, RESET);
-        printf("%s[11] Enviar beta%s\n", GREEN, RESET);
-        printf("%s[12] Confirmar operação enviada%s\n", GREEN, RESET);
-
-        printf("%s[13] Reenviar imagem prédefinida\n%s", CYAN, RESET);
-        printf("%s[14] Reenviar bias\n%s", CYAN, RESET);
-        printf("%s[15] Reenviar beta\n%s", CYAN, RESET);
-        printf("%s[16] Reenviar pesos\n%s", CYAN, RESET);
 
         printf("\n========================================================\n");
+        printf("%s[1] Realizar a inferência de imagem definida%s\n", YELLOW, RESET);
+        printf("%s[2] Realizar a inferência da imagem desenhada na tela%s");
+        printf("%s[3] Benchmark%s");
         printf("[0] para sair\n");
+        printf("\n========================================================\n");
+        
 
         printf("\n%s=>%s ", YELLOW, RESET);
         scanf("%d", &inst);
@@ -82,41 +67,74 @@ int main() {
                 loop=0;
             }
             //realizar a inferência da imagem definida
+            //receber caminho da imagem
             case 1:
             {
-                iniciar(hps_virtual);
-                result = get_resultado(hps_virtual);
-                printf("\nResultado inferência: %d\n", result);
+                //iniciar(hps_virtual);
+                //result = get_resultado(hps_virtual);
+                //printf("\nResultado inferência: %d\n", result);
 
                 
-                printf("\nNúmero de instruções de memória enviadas: %d\n", num_inst);
+                //printf("\nNúmero de instruções de memória enviadas: %d\n", num_inst);
 
                 //número de instruções de memória * 5 +  clocks primeira camada (32 * 18844) + clocks segunda camada 2*(18844) + 
                 // clocks argmax 10 + clock de controle 2
-                int totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
-                printf("\nNúmero de clocks: %d\n", totalClocks);
+                //int totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
+                //printf("\nNúmero de clocks: %d\n", totalClocks);
 
-                done = get_flag_done(hps_virtual); 
-                printf("\nFlag de done: %d \n", done);
+                //done = get_flag_done(hps_virtual); 
+                //printf("\nFlag de done: %d \n", done);
 
-                busy = get_flag_busy(hps_virtual); 
-                printf("Flag de busy: %d \n", busy);
-                
-                error = get_flag_error(hps_virtual);    
-                printf("Flag de erro: %d \n", error);
+                //busy = get_flag_busy(hps_virtual); 
+                //printf("Flag de busy: %d \n", busy);
+                //
+                //error = get_flag_error(hps_virtual);    
+                //printf("Flag de erro: %d \n", error);      printf("%s[2] trocar a imagem de inferência%s\n", YELLOW, RESET);
+                int d;
+                printf("Digite o caminho da imagem:");  
+                printf("\n%s=>%s ", YELLOW, RESET);
+                scanf("%d", &d);
+                int esperado;
+                printf("\nResultado esperado:\n");
+                scanf("%d", &esperado);
+                //result = get_resultado(hps_virtual);
+                //printf("\nResultado da inferência:%d\n",result);
+                //if (result == esperado){printf("Acertou!")}
+
+                //implementar loop com menuzinho, com a opçao de realizar novamente a inferencia com a mesma imagem
+                //realizar a inferencia com uma imagem diferente
+                //outras opções que terá todas esssa opções abaixo: 
+
+                //printf("%s[4] Resetar o Coprocessador%s\n", RED, RESET);
+                //printf("%s[5] Clear operation%s\n", RED, RESET);
+                //printf("%s[6] Enviar operação NOP%s\n", GREEN, RESET);
+                //printf("%s[7] Enviar instrução personalizada%s\n", GREEN, RESET);
+                //printf("%s[9] Enviar pixel%s\n", GREEN, RESET);
+                //printf("%s[8] Enviar peso%s\n", GREEN, RESET);
+                //printf("%s[10] Enviar bias%s\n", GREEN, RESET);
+                //printf("%s[11] Enviar beta%s\n", GREEN, RESET);
+                //printf("%s[12] Confirmar operação enviada%s\n", GREEN, RESET);
+//
+                //printf("%s[13] Reenviar imagem prédefinida\n%s", CYAN, RESET);
+                //printf("%s[14] Reenviar bias\n%s", CYAN, RESET);
+                //printf("%s[15] Reenviar beta\n%s", CYAN, RESET);
+                //printf("%s[16] Reenviar pesos\n%s", CYAN, RESET);
 
                 printf("\n========================================================\n");
                 break;
             }
 
-            //trocar a imagem de inferência
+            //
             case 2:
-                printf("\nFunção não implementada para o Marco 2\n");
+                printf("\nFunção não implementada ainda2\n");
+                
             break;
 
             //Teste de estabilidade inferencias
             case 3:
             {
+                /*
+                printf("%s[3] Teste de estabilidade inferencias%s\n", YELLOW, RESET);
                 int esperado;
                 printf("\nResultado esperado:\n");
 
@@ -140,8 +158,10 @@ int main() {
                 float taxa = (acertos/num)*100;
                 printf("\nTaxa de acerto: %f porcento\n", taxa);
                 break;
+                */
             }
             
+            /*
             //Resetar o Coprocessador
             case 4:
             {
@@ -273,6 +293,7 @@ int main() {
                 printf("\nPesos reenviados\n");
                 break;
             }
+            */
             default :
                 printf("\nOpção inválida. Tente novamente.\n");
                 break;
@@ -281,7 +302,7 @@ int main() {
 
     } while (loop==1);
     
-    fechar(hps_virtual);
+   // fechar(hps_virtual);
     printf("\nMapeamento encerrado.\n");
     
     return 0;
