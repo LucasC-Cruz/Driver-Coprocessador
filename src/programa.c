@@ -6,6 +6,8 @@
 #include "colors.h"
 #include "api.h"
 #include <fcntl.h>
+#include <time.h>
+#include <math.h>
  
 //aura + ego
 char* trim(char* str) {
@@ -65,11 +67,10 @@ int main() {
     printf("\nCarregando Pesos na memória do Coprocessador...");
     store_pesos(hps_virtual);
 
+    //talvez isto esteja quebrado agora na verdade
     int num_inst = total_inst();
-    
-    reset(hps_virtual);
-    iniciar(hps_virtual);
- 
+    //possivelmente teremos que resetar ao longo dos fluxos de inferência
+     
     do
     {
         printf("\n========================================================\n");
@@ -101,6 +102,7 @@ int main() {
                 char caminho[50];
                 char* camin;   
                 limparBuffer();
+                reset(hps_virtual);
                 while(loop2 == 1){
                     printf("Digite o caminho da imagem:");  
                     printf("Formato aceitavel");
@@ -114,10 +116,12 @@ int main() {
                     store_image(hps_virtual, camin);
 
                     int esperado;
-                    int result;
                     printf("\nResultado esperado:\n");
                     scanf("%d", &esperado);
-                    result = get_resultado(hps_virtual);
+                    
+                    iniciar(hps_virtual);
+
+                    int result = get_resultado(hps_virtual);
 
                     printf("\nResultado da inferência:%d\n",result);
                     if (result == esperado){printf("Acertou!");}
@@ -151,6 +155,101 @@ int main() {
             // Benchmark
             case 3:
             {
+
+                struct timespec inicio, fim;
+                struct timespec inicio2, fim2;
+
+                char linha[256];
+                char caminho[200];
+                int val_esperado;
+                int flag_done, result, erro=0;
+                double acuracia, latencia, latenciaMedia, desvioLatencia, vazao, tempo;
+
+                double tempoPorInferencia [10000];
+                float tempoClock = 0.000000002; //considerando 50 Mhz
+                float latenciaReal;
+
+                int totalInferencias=0;
+
+                FILE* arquivo = fopen("arquivos.txt", "r");
+                FILE* saida   = fopen("saida.txt", "r+");
+                if (arquivo == NULL || saida == NULL){
+                    printf("Erro ao abrir o arquivo!");
+                    return 1;
+                }
+            
+                //contando tempo que inclui todas as inferencias
+                clock_gettime(CLOCK_MONOTONIC, &inicio);
+            
+                while(fgets(linha, sizeof(linha), arquivo) != NULL){
+                    sscanf(linha, "%[^;];%d;", caminho, &val_esperado);
+                
+                    //manda a imagem para o driver abrir e colocar no buffer para ser enviado ao coprocessador
+                    send_image(hps_virtual, caminho);
+                
+                    clock_gettime(CLOCK_MONOTONIC, &inicio2);
+
+                    //fazer inferencia
+                    iniciar(hps_virtual);
+                
+                    //espera sinal de done
+                    //na real eu acho que o driver meio que já faz isso?
+                    //ver isso aí
+                    //while(!flag_done){printf("esperando"); scanf("%d", &flag_done);} 
+                
+
+                    clock_gettime(CLOCK_MONOTONIC, &fim2);
+                    tempo = (fim2.tv_sec - inicio2.tv_sec) + (fim2.tv_nsec - inicio2.tv_nsec) / 1e9;
+                    tempoPorInferencia[totalInferencias] = tempo;
+                
+                
+                    //pega resultado
+                    int result = get_resultado(hps_virtual);
+                    totalInferencias+=1;
+                    trim(linha);// tirar o \n que tá no arquivo 
+                    //coloca o resultado no arquivo de saida
+                    fprintf(saida, "%s%d;\n", linha, result);     
+}           
+                //marca o fim
+                clock_gettime(CLOCK_MONOTONIC, &fim);
+
+
+                fclose(arquivo);
+
+                // volta para o início sem fechar
+                fseek(saida, 0, SEEK_SET);
+
+
+                while(fgets(linha, sizeof(linha), saida) != NULL){
+                    sscanf(linha, "%*[^;];%d;%d;", &val_esperado, &result);
+                    if(val_esperado !=result){erro += 1;}
+                }
+
+                tempo = (fim.tv_sec - inicio.tv_sec) + ((fim.tv_nsec - inicio.tv_nsec) / 1e9);
+                int totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
+            
+                acuracia = (double)(totalInferencias-erro)/totalInferencias;
+            
+                latencia = totalClocks * tempoClock;
+                latenciaReal = tempo/totalInferencias;  
+                vazao = 1/(tempo/totalInferencias);
+            
+                double a;
+                for (int i=0; i<totalInferencias; i++){
+                    a += pow((tempoPorInferencia[i] - latenciaMedia), 2);
+                }
+                desvioLatencia = sqrt(a/totalInferencias);
+
+            
+                printf("=== Resultados ===\n");
+                printf("Tempo total:          %f s\n",    tempo);
+                printf("Acuracia:             %f %%\n",   acuracia * 100);
+                printf("Latencia teorica:     %f s\n",    latencia);
+                printf("Latencia real:        %f s\n",    latenciaReal);
+                printf("Vazao:                %f img/s\n", vazao);
+                printf("Desvio: %f", desvioLatencia);   
+                printf("%d", totalInferencias);
+
                 //            
                 break;
             }
