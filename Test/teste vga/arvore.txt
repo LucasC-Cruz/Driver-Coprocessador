@@ -1,0 +1,21 @@
+C:.
+│   arvore.txt
+│   makefile
+│
+├───src
+│       driver.s
+│       img2bin.c
+│       programa.c
+│       vga.c
+│
+├───include
+│       api.h
+│       colors.h
+│       img2bin.h
+│       stb_image.h
+│       vga.h
+│
+└───assets
+	beta_q_invertido.bin
+	b_q_invertido.bin
+	W_in_invertido.bin
