@@ -19,7 +19,7 @@ extern void enable(void* hps_virtual);
 extern void reset(void* hps_virtual);
 extern void clear_operation(void* hps_virtual);
 
-extern void store_image(void* hps_virtual);
+extern void store_image(void* hps_virtual, char* str);
 extern void store_bias(void* hps_virtual);
 extern void store_beta(void* hps_virtual);
 extern void store_pesos(void* hps_virtual);
@@ -33,7 +33,6 @@ extern void str_weight(void* hps_virtual, int endereco, int valor);
 extern void NO_OP(void* hps_virtual);
 
 extern long int confirmar(void* hps_virtual);
-
 
 extern int total_inst();
 
