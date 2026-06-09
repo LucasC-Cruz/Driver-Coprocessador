@@ -183,9 +183,10 @@ int main() {
             
                 while(fgets(linha, sizeof(linha), arquivo) != NULL){
                     sscanf(linha, "%[^;];%d;", caminho, &val_esperado);
-                
+
+                    reset(hps_virtual);
                     //manda a imagem para o driver abrir e colocar no buffer para ser enviado ao coprocessador
-                    send_image(hps_virtual, caminho);
+                    store_image(hps_virtual, caminho);
                 
                     clock_gettime(CLOCK_MONOTONIC, &inicio2);
 
