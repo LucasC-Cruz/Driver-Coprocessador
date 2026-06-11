@@ -12,6 +12,8 @@
 #include "img2bin.h"
 #include "vga.h"
 #include "mouse.h"
+#include "pio.h"
+
  
 //aura + ego
 char* trim(char* str) {
@@ -98,20 +100,22 @@ void imprimir_decimal_para_binario(long int valor) {
 
 
 int main() {
+    
     char* caminho_img_bin = "assets/image.bin";
     char* caminho_desenho = "assets/desenho.bin";
     bool done, busy, error;
     int inst;
-    int a;
-    int result;
+    int a; //usado para selecionar opção no segundo menu
     int loop=1;
     printf("\n============================\nOlá! Iniciando Coprocessador\n============================\n");
     void* hps_virtual = mapear();
-
+    
     if ((intptr_t)hps_virtual == -1) {
         printf("Erro ao mapear memória");
         return 1;
     }
+    vga_pio_ptr  = (volatile uint32_t *)(hps_virtual + (PIO_VGA_OFFSET));
+    vga_done_ptr = (volatile uint32_t *)(hps_virtual + (PIO_VGA_DONE_OFFSET));
 
     zera_inst();
 
@@ -428,4 +432,5 @@ int main() {
     
     return 0;
 }
+
 

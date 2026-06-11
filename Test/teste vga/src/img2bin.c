@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "img2bin.h" 
+#include "img2bin.h" // Inclui o seu próprio cabeçalho
 #include <math.h>
 
 // IMPORTANTE: O #define STB_IMAGE_IMPLEMENTATION fica APENAS AQUI!
@@ -36,5 +36,6 @@ int png2bin(const char *input_filename) {
 
     if (written != bytes_to_write) return 4;
 
-    return 0; 
+    return 0; // Sucesso
 }
+
