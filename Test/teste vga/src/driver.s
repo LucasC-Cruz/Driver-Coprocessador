@@ -31,11 +31,12 @@
     bias_buffer:    .skip 256         @128(bias)*2
     beta_buffer:    .skip 2560       @1280 betas
     pesos_buffer:   .skip 200704 
+    caminho_buffer:  .skip 256
 
 .section .data
 dev_mem: .asciz "/dev/mem"
 @ 3, 5, estão inferindo 7
-image_filename: .asciz "assets/image.bin"
+image_filename: .asciz "assets/predef_6.bin"
 bias_filename:  .asciz "assets/b_q_invertido.bin"
 betas_filename: .asciz "assets/beta_q_invertido.bin"
 pesos_filename: .asciz "assets/W_in_invertido.bin"
@@ -293,15 +294,16 @@ get_flag_error:
 @ =================================== STORE ON LOOP =====================================
 
 @recebe como entrada no r0, o hps virtual 
+@recebe como entrada no r1, um ponteiro com o início da string do caminho
 @tem como saida nada
 .global store_image
     .type store_image, %function
     store_image:
-        push {r1-r8, lr}
+        push {r2-r8, lr}
         mov r8, r0              @hps virtual
+        mov r0, r1              @ponteiro para caminho
 
         @abertura do arquivo binario      
-        ldr r0, =image_filename
         bl abrir_arquivo
         mov r6, r0                   @ guarda fd em r6 para fechar depois
 
@@ -337,7 +339,9 @@ get_flag_error:
         mov r0, r6
         bl fechar_arquivo
 
-        pop {r1-r8, pc}
+        pop {r2-r8, pc}
+
+
 
 
 @ r0 tem hps virtual
@@ -499,7 +503,7 @@ sucesso:
     mov r7, #SYSCALL_WRITE @escreve
     mov r0, #1             @stdout (tela)
     ldr r1, =sucesso_leitura
-    mov r2, #17            @tamanho da saída em bytes
+    mov r2, #14            @tamanho da saída em bytes
     svc #0
     pop {r1, pc}
 
@@ -565,3 +569,4 @@ falha:
         push {lr}
         mov r10, #0
         pop {pc}
+    

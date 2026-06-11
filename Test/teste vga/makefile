@@ -3,13 +3,13 @@ CC = arm-linux-gnueabihf-gcc
 LDLIBS = -lm
 
 # Flags de compilação (-Iinclude avisa onde estão os arquivos .h)
-CFLAGS = -Wall -Iinclude
+CFLAGS = -Wall -Iinclude -std=c99 -lrt
 
 # Definição das pastas do projeto
 SRC_DIR = src
 BUILD_DIR = build
 
-# Nome do executável final (agora salvo dentro da pasta build)
+# Nome do executável final (salvo dentro da pasta build)
 TARGET = $(BUILD_DIR)/exec
 
 # Busca automaticamente todos os arquivos .c e .s dentro de src/
@@ -20,7 +20,7 @@ S_SOURCES = $(wildcard $(SRC_DIR)/*.s)
 OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES)) \
        $(patsubst $(SRC_DIR)/%.s, $(BUILD_DIR)/%.o, $(S_SOURCES))
 
-# Regra padrão
+# Regra padrãoCFLAGS = -Wall -Iinclude
 all: $(BUILD_DIR) $(TARGET)
 
 # Cria a pasta build automaticamente, caso ela não exista
@@ -43,3 +43,4 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
+

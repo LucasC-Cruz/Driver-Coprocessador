@@ -22,44 +22,38 @@
 
 // Função que envia o comando de pixel e aguarda de forma síncrona o sinal de "done" da FPGA
 void enviar_pixel(volatile uint32_t *vga_ptr, uint32_t x, uint32_t y, uint32_t r, uint32_t g, uint32_t b, volatile uint32_t *vga_done_ptr) {
-    // Monta o pacote de dados com o bit de enable em 0
     uint32_t pixel_cmd = x | (y << 9) | (r << 17) | (g << 20) | (b << 23);
     
-    // 1. Envia as coordenadas e cores para o registrador
+    //Envia as coordenadas e cores para o registrador
     *vga_ptr = pixel_cmd;
     
-    // 2. Levanta o sinal de enable (Bit 26) para iniciar a escrita na memória M10K
+    //Levanta o sinal de enable (Bit 26) para iniciar a escrita na memória M10K
     *vga_ptr = pixel_cmd | (1 << 26);
     
-    // 3. Aguarda o hardware (lsu_controller/VGA) responder com done = 1
+    //Aguarda responder com done = 1
     while ((*vga_done_ptr & 0x1) == 0) {
-        // Polling ativo aguardando a FPGA terminar a operação
     }
     
     // 4. Desativa o sinal de enable voltando o Bit 26 para 0
     *vga_ptr = pixel_cmd;
     
-    // 5. Aguarda a máquina de estados da FPGA limpar a flag e retornar para o estado IDLE
-    while ((*vga_done_ptr & 0x1) == 1) {
-        // Polling ativo aguardando o recuo do estado
-    }
 }
 
-int enviar_imagem(void *virtual_base) {
+int exibir_imagem(void *virtual_base, const char *imagem) {
     volatile uint32_t *vga_pio_ptr = NULL;
     volatile uint32_t *vga_done_ptr = NULL;
     
     uint8_t buffer_imagem[TOTAL_BYTES];
 
-    // --- PASSO 1: LER O ARQUIVO BINÁRIO "image" DO DISCO ---
     FILE *file_ptr;
-    file_ptr = fopen("image.bin", "rb");
+    file_ptr = fopen(imagem, "rb");
+
     if (file_ptr == NULL) {
         perror("Erro ao abrir o arquivo 'image'. Certifique-se de que ele esta no mesmo diretorio.");
         return 1;
     }
 
-    // Lê os 784 bytes do arquivo e joga no buffer
+    // Lê os 784 bytes do arquivo para o buffer
     size_t bytes_lidos = fread(buffer_imagem, sizeof(uint8_t), TOTAL_BYTES, file_ptr);
     fclose(file_ptr);
 
@@ -79,18 +73,16 @@ int enviar_imagem(void *virtual_base) {
         }
     }
 
-    // --- PASSO 4: EXIBIR A IMAGEM COM REDIMENSIONAMENTO E POLLING DE DONE ---
-
+    //exibi imagem
     for (int img_y = 0; img_y < IMG_SIZE; img_y++) {
 
         for (int img_x = 0; img_x < IMG_SIZE; img_x++) {
             
-            // Calcula o índice linear correspondente no arquivo binário de 784 bytes
+            // Calcula o índice
             int indice_pixel = (img_y * IMG_SIZE) + img_x;
             uint8_t pixel_original = buffer_imagem[indice_pixel];
             
             // Converte a escala de tons de cinza de 8 bits (0-255) para 3 bits (0-7)
-            // Caso sua imagem já seja binária pura com valores de 0 a 7, use apenas: tom = pixel_original;
             uint32_t tom = pixel_original >> 5; 
             
             // Replicação de pixel (Upscaling por software enviando blocos de SCALE_FACTOR x SCALE_FACTOR)
@@ -101,7 +93,6 @@ int enviar_imagem(void *virtual_base) {
                     uint32_t vga_x = OFFSET_X + (img_x * SCALE_FACTOR) + e_x;
                     uint32_t vga_y = OFFSET_Y + (img_y * SCALE_FACTOR) + e_y;
                     
-                    // Envia garantindo que a FPGA terminou o ciclo anterior
                     enviar_pixel(vga_pio_ptr, vga_x, vga_y, tom, tom, tom, vga_done_ptr);
                 }
             }
