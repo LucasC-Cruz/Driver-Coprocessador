@@ -2,6 +2,7 @@
 module soc_system (
 	clk_clk,
 	clr_operation_external_connection_export,
+	confirmar_external_connection_export,
 	hps_0_f2h_cold_reset_req_reset_n,
 	hps_0_f2h_debug_reset_req_reset_n,
 	hps_0_f2h_stm_hw_events_stm_hwevents,
@@ -86,10 +87,12 @@ module soc_system (
 	pio_resultado_external_connection_export,
 	reset_reset_n,
 	reset_cop_external_connection_export,
-	confirmar_external_connection_export);	
+	vga_data_hps_export,
+	vga_done_export);	
 
 	input		clk_clk;
 	output		clr_operation_external_connection_export;
+	input	[31:0]	confirmar_external_connection_export;
 	input		hps_0_f2h_cold_reset_req_reset_n;
 	input		hps_0_f2h_debug_reset_req_reset_n;
 	input	[27:0]	hps_0_f2h_stm_hw_events_stm_hwevents;
@@ -174,5 +177,6 @@ module soc_system (
 	input	[3:0]	pio_resultado_external_connection_export;
 	input		reset_reset_n;
 	output		reset_cop_external_connection_export;
-	input	[31:0]	confirmar_external_connection_export;
+	output	[31:0]	vga_data_hps_export;
+	input		vga_done_export;
 endmodule

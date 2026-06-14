@@ -1,6 +1,7 @@
 	soc_system u0 (
 		.clk_clk                                    (<connected-to-clk_clk>),                                    //                                 clk.clk
 		.clr_operation_external_connection_export   (<connected-to-clr_operation_external_connection_export>),   //   clr_operation_external_connection.export
+		.confirmar_external_connection_export       (<connected-to-confirmar_external_connection_export>),       //       confirmar_external_connection.export
 		.hps_0_f2h_cold_reset_req_reset_n           (<connected-to-hps_0_f2h_cold_reset_req_reset_n>),           //            hps_0_f2h_cold_reset_req.reset_n
 		.hps_0_f2h_debug_reset_req_reset_n          (<connected-to-hps_0_f2h_debug_reset_req_reset_n>),          //           hps_0_f2h_debug_reset_req.reset_n
 		.hps_0_f2h_stm_hw_events_stm_hwevents       (<connected-to-hps_0_f2h_stm_hw_events_stm_hwevents>),       //             hps_0_f2h_stm_hw_events.stm_hwevents
@@ -85,6 +86,7 @@
 		.pio_resultado_external_connection_export   (<connected-to-pio_resultado_external_connection_export>),   //   pio_resultado_external_connection.export
 		.reset_reset_n                              (<connected-to-reset_reset_n>),                              //                               reset.reset_n
 		.reset_cop_external_connection_export       (<connected-to-reset_cop_external_connection_export>),       //       reset_cop_external_connection.export
-		.confirmar_external_connection_export       (<connected-to-confirmar_external_connection_export>)        //       confirmar_external_connection.export
+		.vga_data_hps_export                        (<connected-to-vga_data_hps_export>),                        //                        vga_data_hps.export
+		.vga_done_export                            (<connected-to-vga_done_export>)                             //                            vga_done.export
 	);
 

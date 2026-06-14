@@ -31,15 +31,15 @@
     bias_buffer:    .skip 256         @128(bias)*2
     beta_buffer:    .skip 2560       @1280 betas
     pesos_buffer:   .skip 200704 
-    caminho_buffer  .skip 256
+    caminho_buffer:  .skip 256
 
 .section .data
 dev_mem: .asciz "/dev/mem"
 @ 3, 5, estão inferindo 7
-image_filename: .asciz "imagem_5_2.bin"
-bias_filename:  .asciz "b_q_invertido.bin"
-betas_filename: .asciz "beta_q_invertido.bin"
-pesos_filename: .asciz "W_in_invertido.bin"
+image_filename: .asciz "assets/predef_6.bin"
+bias_filename:  .asciz "assets/b_q_invertido.bin"
+betas_filename: .asciz "assets/beta_q_invertido.bin"
+pesos_filename: .asciz "assets/W_in_invertido.bin"
 sucesso_leitura: .ascii "Consegui ler!\n"
 mensagem_falha: .ascii "ERRO! Encerrando programa!"
 
@@ -569,4 +569,5 @@ falha:
         push {lr}
         mov r10, #0
         pop {pc}
+    
 

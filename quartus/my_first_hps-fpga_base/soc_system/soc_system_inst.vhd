@@ -2,6 +2,7 @@
 		port (
 			clk_clk                                    : in    std_logic                     := 'X';             -- clk
 			clr_operation_external_connection_export   : out   std_logic;                                        -- export
+			confirmar_external_connection_export       : in    std_logic_vector(31 downto 0) := (others => 'X'); -- export
 			hps_0_f2h_cold_reset_req_reset_n           : in    std_logic                     := 'X';             -- reset_n
 			hps_0_f2h_debug_reset_req_reset_n          : in    std_logic                     := 'X';             -- reset_n
 			hps_0_f2h_stm_hw_events_stm_hwevents       : in    std_logic_vector(27 downto 0) := (others => 'X'); -- stm_hwevents
@@ -86,7 +87,8 @@
 			pio_resultado_external_connection_export   : in    std_logic_vector(3 downto 0)  := (others => 'X'); -- export
 			reset_reset_n                              : in    std_logic                     := 'X';             -- reset_n
 			reset_cop_external_connection_export       : out   std_logic;                                        -- export
-			confirmar_external_connection_export       : in    std_logic_vector(31 downto 0) := (others => 'X')  -- export
+			vga_data_hps_export                        : out   std_logic_vector(31 downto 0);                    -- export
+			vga_done_export                            : in    std_logic                     := 'X'              -- export
 		);
 	end component soc_system;
 
@@ -94,6 +96,7 @@
 		port map (
 			clk_clk                                    => CONNECTED_TO_clk_clk,                                    --                                 clk.clk
 			clr_operation_external_connection_export   => CONNECTED_TO_clr_operation_external_connection_export,   --   clr_operation_external_connection.export
+			confirmar_external_connection_export       => CONNECTED_TO_confirmar_external_connection_export,       --       confirmar_external_connection.export
 			hps_0_f2h_cold_reset_req_reset_n           => CONNECTED_TO_hps_0_f2h_cold_reset_req_reset_n,           --            hps_0_f2h_cold_reset_req.reset_n
 			hps_0_f2h_debug_reset_req_reset_n          => CONNECTED_TO_hps_0_f2h_debug_reset_req_reset_n,          --           hps_0_f2h_debug_reset_req.reset_n
 			hps_0_f2h_stm_hw_events_stm_hwevents       => CONNECTED_TO_hps_0_f2h_stm_hw_events_stm_hwevents,       --             hps_0_f2h_stm_hw_events.stm_hwevents
@@ -178,6 +181,7 @@
 			pio_resultado_external_connection_export   => CONNECTED_TO_pio_resultado_external_connection_export,   --   pio_resultado_external_connection.export
 			reset_reset_n                              => CONNECTED_TO_reset_reset_n,                              --                               reset.reset_n
 			reset_cop_external_connection_export       => CONNECTED_TO_reset_cop_external_connection_export,       --       reset_cop_external_connection.export
-			confirmar_external_connection_export       => CONNECTED_TO_confirmar_external_connection_export        --       confirmar_external_connection.export
+			vga_data_hps_export                        => CONNECTED_TO_vga_data_hps_export,                        --                        vga_data_hps.export
+			vga_done_export                            => CONNECTED_TO_vga_done_export                             --                            vga_done.export
 		);
 
