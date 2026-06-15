@@ -1,9 +1,10 @@
 # Compilador e Bibliotecas
 CC = arm-linux-gnueabihf-gcc
-LDLIBS = -lm
+LDLIBS = -lrt -lm
+# flags de ld ^
 
 # Flags de compilação (-Iinclude avisa onde estão os arquivos .h)
-CFLAGS = -Wall -Iinclude -std=c99 
+CFLAGS = -Wall -Iinclude -std=c99
 
 # Definição das pastas do projeto
 SRC_DIR = src
@@ -43,5 +44,4 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
-
 

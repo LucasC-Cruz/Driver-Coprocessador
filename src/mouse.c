@@ -16,12 +16,12 @@
 
 // Configurações lógicas da imagem e renderização
 #define IMG_SIZE 28
-#define SCALE_FACTOR 5
-#define OFFSET_X 0//((320 - (IMG_SIZE * SCALE_FACTOR)) / 2) 
+#define SCALE_FACTOR 8  
+#define OFFSET_X 48//((320 - (IMG_SIZE * SCALE_FACTOR)) / 2) 
 #define OFFSET_Y 8//((240 - (IMG_SIZE * SCALE_FACTOR)) / 2)
 
 // Renderiza o macro-pixel (bloco de 8x8) na VGA
-static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y, int tamanho, bool desenhando, int offset_x) {
+static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y, bool desenhando) {
     uint32_t vga_x, vga_y, novo_pixel_tela;
     
     int maxi, meio, mini;
@@ -35,8 +35,8 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
         mini = -1;
     }
 
-    for (int i = -tamanho; i <= tamanho; i++) {
-        for (int j = -tamanho; j <= tamanho; j++) {
+    for (int i = -1; i < 2; i++) {
+        for (int j = -1; j < 2; j++) {
             int vizinho_x = img_x + i;
             int vizinho_y = img_y + j;
             if ((vizinho_x < 0 || vizinho_x >= IMG_SIZE || vizinho_y < 0 || vizinho_y >= IMG_SIZE)) {
@@ -51,7 +51,7 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
                 novo_pixel_tela = mini;
             }
             
-            //soma com o pixel atual para obter o novo valor
+            //soma com o pixel atual para saber o novo valor
             int n = (int)tela_desenho[img_y+j][img_x+i] + novo_pixel_tela;
 
             //pra não estourar o valor maximo e minimo do pixel
@@ -67,7 +67,7 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
             //loop pra pintar todos os pixeis do vga
             for (int e_y = 0; e_y < SCALE_FACTOR; e_y++) {
                 for (int e_x = 0; e_x < SCALE_FACTOR; e_x++) {
-                    vga_x = offset_x + ((vizinho_x) * SCALE_FACTOR) + e_x;
+                    vga_x = OFFSET_X + ((vizinho_x) * SCALE_FACTOR) + e_x;
                     vga_y = OFFSET_Y + ((vizinho_y) * SCALE_FACTOR) + e_y;
                     enviar_pixel(vga_x, vga_y, n, n, n);
                 }
@@ -77,13 +77,13 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
 }
 
 //desenha só as bordas do quadrado
-static void selecao_cursor(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y, uint32_t r, uint32_t g, uint32_t b, int offset_x) {
+static void selecao_cursor(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y, uint32_t r, uint32_t g, uint32_t b) {
     uint32_t vga_x, vga_y;
     int n = tela_desenho[img_y][img_x];
 
     for (int e_y = 0; e_y < SCALE_FACTOR; e_y++) {
         for (int e_x = 0; e_x < SCALE_FACTOR; e_x++) {
-            vga_x = offset_x + (img_x * SCALE_FACTOR) + e_x;
+            vga_x = OFFSET_X + (img_x * SCALE_FACTOR) + e_x;
             vga_y = OFFSET_Y + (img_y * SCALE_FACTOR) + e_y;
             if (((e_x == 0) || (e_x == 7) || (e_y == 0) || (e_y == 7))){
                 enviar_pixel(vga_x, vga_y, r, g, b);
@@ -94,12 +94,12 @@ static void selecao_cursor(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, 
 }
 
 // Restaura a cor de fundo ou tinta original da matriz
-static void restaurar_bloco_original(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y, int offset_x) {
+static void restaurar_bloco_original(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y) {
     int n = tela_desenho[img_y][img_x];
 
     for (int e_y = 0; e_y < SCALE_FACTOR; e_y++) {
         for (int e_x = 0; e_x < SCALE_FACTOR; e_x++) {
-            uint32_t vga_x = offset_x + (img_x * SCALE_FACTOR) + e_x;
+            uint32_t vga_x = OFFSET_X + (img_x * SCALE_FACTOR) + e_x;
             uint32_t vga_y = OFFSET_Y + (img_y * SCALE_FACTOR) + e_y;
             enviar_pixel(vga_x, vga_y, n, n, n);
         }
@@ -107,9 +107,9 @@ static void restaurar_bloco_original(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], i
 }
 
 // Função de salvamento em arquivo binário bruto
-static void salvar_imagem_bin(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], char* caminho) {
+static void salvar_imagem_bin(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE]) {
     printf("\n\nSalvando imagem em 'assets/desenho.bin'...");
-    FILE *file_ptr = fopen(caminho, "wb");
+    FILE *file_ptr = fopen("assets/desenho.bin", "wb");
     if (file_ptr == NULL) {
         perror("\nErro ao criar o arquivo desenho.bin");
         return;
@@ -129,8 +129,6 @@ static void salvar_imagem_bin(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], char* ca
 int executar_painel_desenho_vga(void *hps_virtual) {
     //tela para desenho
     uint8_t tela_desenho[IMG_SIZE][IMG_SIZE] = {{0}};
-    uint8_t tela_desenho_sem_ruido[IMG_SIZE][IMG_SIZE] = {{0}};
-
 
     //abrindo fd do mouse
     const char *dev = "/dev/input/event0"; 
@@ -160,8 +158,7 @@ int executar_painel_desenho_vga(void *hps_virtual) {
     int prev_x = cursor_x;
     int prev_y = cursor_y;
 
-    selecao_cursor(tela_desenho, cursor_x, cursor_y, 0, 7, 0, 0); // Cursor verde
-    selecao_cursor(tela_desenho, cursor_x, cursor_y, 0, 7, 0, 145);
+    selecao_cursor(tela_desenho, cursor_x, cursor_y, 0, 7, 0); // Cursor verde
 
     bool desenhando=0;
     bool apagando=0;
@@ -208,9 +205,7 @@ int executar_painel_desenho_vga(void *hps_virtual) {
 
             } else if (evento.code == BTN_MIDDLE) {
                 if (evento.value) {
-                    //salvando as duas imagens
-                    salvar_imagem_bin(tela_desenho, "assets/desenho.bin");
-                    salvar_imagem_bin(tela_desenho_sem_ruido, "assets/desenho_sem_ruido.bin");
+                    salvar_imagem_bin(tela_desenho);
                     close(fd);
                     return 0;
                 } 
@@ -226,26 +221,17 @@ int executar_painel_desenho_vga(void *hps_virtual) {
         if (cursor_y >= IMG_SIZE) cursor_y = IMG_SIZE - 1;
 
         if (desenhando){
-            pincel(tela_desenho, cursor_x, cursor_y, 3, 1, 0);
-            selecao_cursor(tela_desenho, cursor_x, cursor_y, 0, 7, 0, 0);
-        
-            pincel(tela_desenho_sem_ruido, cursor_x, cursor_y, 1, 1, 145);
-            selecao_cursor(tela_desenho_sem_ruido, cursor_x, cursor_y, 0, 7, 0, 145);
+            pincel(tela_desenho, cursor_x, cursor_y, 1);
+            selecao_cursor(tela_desenho, cursor_x, cursor_y, 0, 7, 0);
         } 
         else if (apagando){
-            pincel(tela_desenho, cursor_x, cursor_y, 3, 0, 0);
-            selecao_cursor(tela_desenho, cursor_x, cursor_y, 7, 0, 0, 0);
-        
-            pincel(tela_desenho_sem_ruido, cursor_x, cursor_y, 1, 0, 145);
-            selecao_cursor(tela_desenho_sem_ruido, cursor_x, cursor_y, 7, 0, 0, 145);
+            pincel(tela_desenho, cursor_x, cursor_y, 0);
+            selecao_cursor(tela_desenho, cursor_x, cursor_y, 7, 0, 0);
         } 
 
         if (cursor_x != prev_x || cursor_y != prev_y) {
-            restaurar_bloco_original( tela_desenho, prev_x, prev_y, 0);
-            selecao_cursor(tela_desenho, cursor_x, cursor_y, 7, 0, 7, 0);
-
-            restaurar_bloco_original( tela_desenho_sem_ruido, prev_x, prev_y, 145);
-            selecao_cursor(tela_desenho_sem_ruido, cursor_x, cursor_y, 7, 0, 7, 145);
+            restaurar_bloco_original( tela_desenho, prev_x, prev_y);
+            selecao_cursor(tela_desenho, cursor_x, cursor_y, 7, 0, 7);
         }
         
     }

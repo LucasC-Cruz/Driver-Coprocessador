@@ -24,6 +24,7 @@
 .equ SYSCALL_CLOSE,    6
 .equ READ_ONLY,        0
 
+.section .note.GNU-stack,"",%progbits
 
 .section .bss
 .align 2
