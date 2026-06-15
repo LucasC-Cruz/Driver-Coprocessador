@@ -3,7 +3,7 @@ CC = arm-linux-gnueabihf-gcc
 LDLIBS = -lm
 
 # Flags de compilação (-Iinclude avisa onde estão os arquivos .h)
-CFLAGS = -Wall -Iinclude -std=c99 -lrt -lm
+CFLAGS = -Wall -Iinclude -std=c99 
 
 # Definição das pastas do projeto
 SRC_DIR = src

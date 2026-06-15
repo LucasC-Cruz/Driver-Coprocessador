@@ -10,6 +10,9 @@
 #include "pio.h"
 
 
+#define PIO_VGA_OFFSET      0x0090 
+#define PIO_VGA_DONE_OFFSET 0x00A0 
+
 // Definições do formato da imagem original
 #define IMG_SIZE 28
 #define TOTAL_BYTES 784 // 28 * 28
