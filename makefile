@@ -1,9 +1,9 @@
 # Compilador e Bibliotecas
 CC = arm-linux-gnueabihf-gcc
-LDLIBS = -lrt -lm
+LDLIBS = -lm
 
 # Flags de compilação (-Iinclude avisa onde estão os arquivos .h)
-CFLAGS = -Wall -Iinclude -std=c99 -D_POSIX_C_SOURCE=200809L
+CFLAGS = -Wall -Iinclude -std=c99 -lrt -lm
 
 # Definição das pastas do projeto
 SRC_DIR = src
