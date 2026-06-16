@@ -22,6 +22,29 @@
 volatile uint32_t *vga_pio_ptr; 
 volatile uint32_t  *vga_done_ptr;
 
+#define LIST_FILE    "src/arquivos_1_bin.txt"
+//definindo range máximo para sorteio
+#define RAND_MAX_IDX 10000
+#define OUTPUT_FILE  "src/saida.txt"
+#define OUTPUT_FILE2  "src/saida2.txt"
+#define N 10
+
+void salvar_matriz_csv(int matriz[N][N], const char *caminho) {
+    FILE *out = fopen(caminho, "w");
+    if (!out) { perror("Erro ao criar CSV"); return; }
+ 
+    fprintf(out, "Real\\Predito");
+    for (int j = 0; j < N; j++) fprintf(out, ";Pred_%d", j);
+    fprintf(out, "\n");
+ 
+    for (int i = 0; i < N; i++) {
+        fprintf(out, "Real_%d", i);
+        for (int j = 0; j < N; j++) fprintf(out, ";%d", matriz[i][j]);
+        fprintf(out, "\n");
+    }
+    fclose(out);
+}
+
 //aura + ego
 char* trim(char* str) {
    // Remove do final
@@ -104,16 +127,49 @@ void imprimir_decimal_para_binario(long int valor) {
    printf("\n"); // Quebra de linha final para deixar o terminal organizado
 }
 
+void salvar_relatorio_acertos(int matriz[N][N], const char *caminho) {
+    FILE *out = fopen(caminho, "w");
+    if (!out) { perror("Erro ao criar arquivo"); return; }
+ 
+    fprintf(out, "Valor Esperado;Acertos;Porcentagem de Acertos\n");
+ 
+    for (int i = 0; i < N; i++) {
+        int total = 0;
+        for (int j = 0; j < N; j++) total += matriz[i][j];
+        int acertos = matriz[i][i];
+        float pct = (total > 0) ? (100.0f * acertos / total) : 0.0f;
+        fprintf(out, "%d;%d;%.2f%%\n", i, acertos, pct);
+    }
+    fclose(out);
+}
 
-int main() {
+void salvar_metricas(double acuracia, double latencia,
+                     double latenciaRealMedia, double vazao, double desvioLatencia, const char *caminho,) {
+    FILE *out = fopen(caminho, "w");
+    if (!out) { perror("Erro ao criar arquivo"); return; }
+ 
+    fprintf(out, "Acurácia;Latência Teórica;Latência Média;Vazão;Desvio Latência\n");
+    fprintf(out, "%.4f;%.4f;%.4f;%.4f;%.4f\n",
+            acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia);
+ 
+    fclose(out);
+}
 
-  
+
+
+int main() 
+ 
+   int matriz[N][N];
+   memset(matriz, 0, sizeof(matriz))
    char* caminho_img_bin = "assets/image.bin";
    char* caminho_desenho = "assets/desenho.bin";
    bool done, busy, error;
    int inst;
    int a; //usado para selecionar opção no segundo menu
    int loop=1;
+   struct timespec inicio2, fim2;
+
+
    printf("\n============================\nOlá! Iniciando Coprocessador\n============================\n");
    void* hps_virtual = mapear();
   
@@ -140,10 +196,11 @@ int main() {
 
    //talvez isto esteja quebrado agora na verdade
    int num_inst = total_inst();
+   int totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
    //possivelmente teremos que resetar ao longo dos fluxos de inferência
    
    do
-   {
+   
        printf("\n========================================================\n");
        printf("%s[1] Realizar a inferencia de imagem definida%s\n", YELLOW, RESET);
        printf("%s[2] Realizar a inferencia da imagem desenhada na tela%s\n", YELLOW, RESET);
@@ -154,7 +211,7 @@ int main() {
        printf("\n%s=>%s ", YELLOW, RESET);
        scanf("%d", &inst);
        switch (inst)
-       {
+       
            case 0:
            {
                printf("\nFinalizando o programa\n");
@@ -205,11 +262,10 @@ int main() {
                    printf("\nResultado da inferência:%d\n",result);
                    if (result == esperado){printf("Acertou!");}
 
-                   printf("\nNúmero de instruções de memória enviadas: %d\n", num_inst);
 
                    //número de instruções de memória * 5 +  clocks primeira camada (32 * 18844) + clocks segunda camada 2*(18844) +
                    // clocks argmax 10 + clock de controle 2
-                   int totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
+
                    printf("\nNúmero de clocks: %d\n", totalClocks);
                   
                    done = get_flag_done(hps_virtual);
@@ -243,86 +299,333 @@ int main() {
            }
            // Benchmark
            case 3:
-           {
-               struct timespec inicio, fim;
-               struct timespec inicio2, fim2;
+            char linha[256];
+            char caminho[200];
+            int val_esperado;
+            int result, erro=0;
+            double acuracia, latencia, desvioLatencia, vazao, tempo;
+            int tempoPorInferencia[10000];
+            double tempoTotal;
+            float tempoClock = 0.000000002; //considerando 50 Mhz
+            float latenciaRealMedia;
+            int totalInferencias=0;
+            int opcao = -1;
 
-               char linha[256];
-               char caminho[200];
-               int val_esperado;
-               int result, erro=0;
-               double acuracia, latencia, desvioLatencia, vazao, tempo;
+            while (opcao != 0) 
+                printf("\n--- Menu de Benchmark ---\n");
+                printf("1 - Modo benchmark total\n");
+                printf("2 - Benchmark sorteado\n");
+                printf("3 - Benchmark por pasta\n");
+                printf("0 - Sair\n");
+                printf("Escolha uma opcao: ");
+                scanf("%d", &opcao);
+                switch (opcao) 
+                    case 1:
+                        printf("Voce escolheu: Modo benchmark total.\n");
+                        FILE* arquivo = fopen(LIST_FILE, "r");
+                        FILE* saida   = fopen(OUTPUT_FILE, "r+");
+                        if (arquivo == NULL || saida == NULL){
+                            printf("Erro ao abrir o arquivo!");
+                            return 1;
+                        }
 
-               double tempoPorInferencia [10000];
-               float tempoClock = 0.000000002; //considerando 50 Mhz
-               float latenciaReal;
-
-               int totalInferencias=0;
-
-               FILE* arquivo = fopen("src/arquivos_1_bin.txt", "r");
-               FILE* saida   = fopen("src/saida.txt", "r+");
-               if (arquivo == NULL || saida == NULL){
-                   printf("Erro ao abrir o arquivo!");
-                   return 1;
-               }
-          
-               //contando tempo que inclui todas as inferencias
-               clock_gettime(CLOCK_MONOTONIC, &inicio);
-          
-               while(fgets(linha, sizeof(linha), arquivo) != NULL){
-                   sscanf(linha, "%[^;];%d;", caminho, &val_esperado);
-
-                   reset(hps_virtual);
-                   //manda a imagem para o driver abrir e colocar no buffer para ser enviado ao coprocessador
-                   store_image(hps_virtual, caminho);
-              
-                   clock_gettime(CLOCK_MONOTONIC, &inicio2);
-
-                   //fazer inferencia
-                   iniciar(hps_virtual);
-
-                   clock_gettime(CLOCK_MONOTONIC, &fim2);
-                   tempo = (fim2.tv_sec - inicio2.tv_sec) + (fim2.tv_nsec - inicio2.tv_nsec) / 1e9;
-                   tempoPorInferencia[totalInferencias] = tempo;
-              
-              
-                   //pega resultado
-                   int result = get_resultado(hps_virtual);
-                   totalInferencias+=1;
-                   trim(linha);// tirar o \n que tá no arquivo
-                   //coloca o resultado no arquivo de saida
-                   fprintf(saida, "%s%d;\n", linha, result);    
-}          
-               //marca o fim
-               clock_gettime(CLOCK_MONOTONIC, &fim);
+                        fprintf(saida, "Valor Esperado;Resultado;Latência;Ciclos;\n");
+                    
+                        while(fgets(linha, sizeof(linha), arquivo) != NULL){
+                            sscanf(linha, "%[^;];%d;", caminho, &val_esperado);
+                            reset(hps_virtual);
+                            //manda a imagem para o driver abrir e colocar no buffer para ser enviado ao coprocessador
+                            store_image(hps_virtual, caminho);
+                         
+                            clock_gettime(CLOCK_MONOTONIC, &inicio2);
+                            //fazer inferencia
+                            iniciar(hps_virtual);
+                            clock_gettime(CLOCK_MONOTONIC, &fim2);
+                            tempo = (fim2.tv_sec - inicio2.tv_sec) + (fim2.tv_nsec - inicio2.tv_nsec) / 1e9;
+                            tempoPorInferencia[totalInferencias] = tempo;
+                         
+                         
+                            //pega resultado
+                            int result = get_resultado(hps_virtual);
+                            totalInferencias+=1;
+                            trim(linha);// tirar o \n que tá no arquivo
 
 
-               fclose(arquivo);
+                            //coloca o resultado no arquivo de saida
+                            fprintf(saida, "%d;%d;%4f;%d\n", val_esperado, result, tempo, totalClocks);
+                            //colocar só o valor esperado o resultado, o tempo que demorou e o número de ciclos   
+                        }
 
-               // volta para o início sem fechar
-               fseek(saida, 0, SEEK_SET);
+                        fclose(arquivo);
+
+                        // ------------- PARTE DE ELABORAÇÃO DO LOG DE RESULTADO DA INFERÊNCIA ---------- // 
+                        // volta para o início sem fechar
+                        fseek(saida, 0, SEEK_SET);
+                        //descartar a primeira linha
+                        fgets(linha, sizeof(linha), saida);
+                        while(fgets(linha, sizeof(linha), saida) != NULL){
+                            sscanf(linha, "%*[^;];%d;%d;%f;%d", &val_esperado, &result, &tempo, &totalClocks);
+                            if(val_esperado != result)
+                                erro += 1;
+                            //tem como extrair total inferido de cada número e quantos acertos
+                            matriz[esperado][predito]++;
+                            tempoTotal += tempo;
+                        }
+                        fclose(saida);
+                       
+                        salvar_matriz_csv(matriz, "matrizConfusao.txt");
+                        salvar_relatorio_acertos(matriz, "acertos.txt");
+                       
+                        acuracia = (double)(totalInferencias-erro)/totalInferencias;
+                        latencia = totalClocks * tempoClock;
+                        latenciaRealMedia = tempoTotal/totalInferencias;
+                        vazao = 1/(tempoTotal/totalInferencias);
+                     
+                        double a;
+                        for (int i=0; i<totalInferencias; i++){
+                            a += pow((tempoPorInferencia[i] - latenciaReal), 2);
+                        }
+                        desvioLatencia= sqrt(a/totalInferencias);
+                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "metricas.txt")
+                        
+                        break;
+                       
 
 
-               while(fgets(linha, sizeof(linha), saida) != NULL){
-                   sscanf(linha, "%*[^;];%d;%d;", &val_esperado, &result);
-                   if(val_esperado !=result){erro += 1;}
-               }
+                     case 2:
+                        printf("Voce escolheu: Benchmark sorteado.\n");
+                        int tempoPorInferencia[10000];
+                        /* ── 1. Abre o .txt e lê tudo num buffer ── */
+                        FILE* arquivo = fopen(LIST_FILE, "r");
+                        //talvez dê um problema se o arquivo não existir
+                        FILE* saida   = fopen(OUTPUT_FILE2, "r+");
+                        if (arquivo == NULL || saida == NULL){
+                            printf("Erro ao abrir o arquivo!");
+                            return 1;
+                        }
 
-               tempo = (fim.tv_sec - inicio.tv_sec) + ((fim.tv_nsec - inicio.tv_nsec) / 1e9);
-               int totalClocks = (num_inst *5) + (32*18844) + (2*18844) + 10 + 2;
-          
-               acuracia = (double)(totalInferencias-erro)/totalInferencias;
-          
-               latencia = totalClocks * tempoClock;
-               latenciaReal = tempo/totalInferencias; 
-               vazao = 1/(tempo/totalInferencias);
+                        //truque para descobrir o tamanho do arquivo
+                        fseek(list_file, 0, SEEK_END);
+                        long size = ftell(list_file);
+                        rewind(list_file); //voltando ao começo do arquivo
 
-          
-               double a;
-               for (int i=0; i<totalInferencias; i++){
-                   a += pow((tempoPorInferencia[i] - latenciaReal), 2);
-               }
-               desvioLatencia = sqrt(a/totalInferencias);
+                        char *buffer = malloc(size + 1);
+                        if (!buffer) { perror("malloc"); fclose(list_file); return EXIT_FAILURE; }
+
+                        //coloca o arquivo no buffer
+                        fread(buffer, 1, size, list_file);
+                        buffer[size] = '\0';
+                        fclose(list_file);
+
+                        /* ── 2. Conta linhas e monta o array de ponteiros ── */
+                        int n_paths = 0;
+
+                        //lendo o buffer para descobrir o número de caminhos presentes no arquivo
+                        for (long i = 0; i < size; i++)
+                            if (buffer[i] == '\n') n_paths++;
+                        if (size > 0 && buffer[size - 1] != '\n') n_paths++;
+                        //cria array de ponteiros contendo os caminhos 
+                        char **paths = malloc(n_paths * sizeof(char *));
+                        if (!paths) { perror("malloc"); free(buffer); return EXIT_FAILURE; }
+                        
+                        //carregando as linhas na estrutura de dado (array safadinho)
+                        int count = 0;
+                        char *line = strtok(buffer, "\r\n");
+                        while (line) {
+                            if (line[0] != '\0') {
+                                /* corta tudo a partir do primeiro ';' */
+                                char *semi = strchr(line, ';');
+                                if (semi) *semi = '\0';
+                                paths[count++] = line;
+                            }
+                            line = strtok(NULL, "\r\n");
+                        }
+                        printf("Caminhos carregados: %d\n", count);
+
+                        /* ── 3. Lê o número de sorteios ── */
+                        int n_draws;
+                        printf("Numero de sorteios: ");
+                        if (scanf("%d", &n_draws) != 1 || n_draws <= 0) {
+                            fprintf(stderr, "Entrada invalida.\n");
+                            free(paths); free(buffer);
+                            return EXIT_FAILURE;
+                        }
+                        /* ── 4. Sorteia e abre as imagens ── */
+                        //esse negócio aqui é bem interessante
+                        //srand é a seed rand é basicamente a partir dela que geramos uma sequência de números aleatórios
+                        // time(null) ppega a hora atual do sistema em segundos, oq gera novas sementes a cada segundo
+                        //:)
+                        srand((unsigned)time(NULL));
+
+                        printf("\nIniciando benchmark (%d sorteios)...\n\n", n_draws);
+                        for (int i = 0; i < n_draws; i++){
+                            reset(hps_virtual); 
+                            int idx      = rand() % (RAND_MAX_IDX + 1);
+                            int real_idx = idx % count;
+                            printf("[%4d] idx=%5d -> %s\n", i + 1, idx, paths[real_idx]);
+                            //aqui daríamos open, mas o que devemos fazer é passar o caminho para o driver
+                            store_image(hps_virtual, paths[real_idx]);
+
+                            clock_gettime(CLOCK_MONOTONIC, &inicio2);
+                            iniciar(hps_virtual);
+                            clock_gettime(CLOCK_MONOTONIC, &fim2);
+                            tempo = (fim2.tv_sec - inicio2.tv_sec) + (fim2.tv_nsec - inicio2.tv_nsec) / 1e9;
+                            tempoPorInferencia[totalInferencias] = tempo;
+                            int result = get_resultado(hps_virtual);
+                            printf("%d", result);
+
+
+                        }
+                        printf("\nBenchmark concluido.\n");
+                        /* ── 5. Libera memória ── */
+                        free(paths);
+                        free(buffer);
+                        break;
+
+                    case 3:
+                        printf("Voce escolheu: Benchmark por pasta.\n");
+
+                        /* ══════════════════════════════════════════
+                           1. Menu — dígito (0-9) e iterações (100-300)
+                           ══════════════════════════════════════════
+                        */
+                        int digit, iterations;
+
+                        printf("===== Benchmark de Acesso a Imagens =====\n\n");
+
+                        do {
+                            printf("Escolha um digito [0-9]: ");
+                            scanf("%d", &digit);
+                        } while (digit < 0 || digit > 9);
+                    
+                        do {
+                            printf("Numero de iteracoes [100-300]: ");
+                            scanf("%d", &iterations);
+                        } while (iterations < 100 || iterations > 300);
+                    
+                        printf("\nDigito escolhido : %d\n", digit);
+                        printf("Iteracoes        : %d\n\n", iterations);
+                    
+                        /* ══════════════════════════════════════════
+                           2. Carrega o .txt inteiro num buffer
+                           ══════════════════════════════════════════ */
+                        FILE *list_file = fopen(LIST_FILE, "r");
+                        if (!list_file) { perror("fopen"); return EXIT_FAILURE; }
+                    
+                        fseek(list_file, 0, SEEK_END);
+                        long size = ftell(list_file);
+                        rewind(list_file);
+                    
+                        char *buffer = malloc(size + 1);
+                        if (!buffer) { perror("malloc"); fclose(list_file); return EXIT_FAILURE; }
+                    
+                        fread(buffer, 1, size, list_file);
+                        buffer[size] = '\0';
+                        fclose(list_file);
+                    
+                        /* ══════════════════════════════════════════
+                           3. Filtra as linhas pelo dígito escolhido
+                              Formato: /home/.../testes/<d>/<img>.png;<d>;
+                              O filtro é o label após o último ';', ex: ";9;"
+                           ══════════════════════════════════════════ */
+                    
+                        /* monta o sufixo de filtro, ex: ";9;" */
+                        char filter[8];
+                        snprintf(filter, sizeof(filter), ";%d;", digit);
+                    
+                        /* primeiro passo: conta quantas linhas batem com o filtro */
+                        int n_paths = 0;
+                        char *p = buffer;
+                        while (*p) {
+                            char *nl = strchr(p, '\n');
+                            char *end = nl ? nl : p + strlen(p);
+                            /* procura o filtro dentro desta linha */
+                            if (end > p) {
+                                char saved = *end; *end = '\0';
+                                if (strstr(p, filter)) n_paths++;
+                                *end = saved;
+                            }
+                            p = nl ? nl + 1 : end;
+                        }
+                    
+                        if (n_paths == 0) {
+                            fprintf(stderr, "Nenhum caminho encontrado para o digito %d.\n", digit);
+                            free(buffer);
+                            return EXIT_FAILURE;
+                        }
+                    
+                        char **paths = malloc(n_paths * sizeof(char *));
+                        if (!paths) { perror("malloc"); free(buffer); return EXIT_FAILURE; }
+                    
+                        /* segundo passo: preenche o array apontando para cada linha filtrada
+                           e corta a string no primeiro ';' para ficar só o caminho limpo     */
+                        int count = 0;
+                        p = buffer;
+                        while (*p) {
+                            char *nl  = strchr(p, '\n');
+                            char *end = nl ? nl : p + strlen(p);
+                        
+                            if (end > p) {
+                                char saved = *end; *end = '\0';
+                                if (strstr(p, filter)) {
+                                    /* termina a string no ';' para remover ";d;" do final */
+                                    char *semi = strchr(p, ';');
+                                    if (semi) *semi = '\0';
+                                    paths[count++] = p;
+                                }
+                                /* não restaura '*end': o '\0' serve de separador permanente */
+                            }
+                        
+                            p = nl ? nl + 1 : end;
+                        }
+                    
+                        printf("Caminhos encontrados para digito %d: %d\n\n", digit, count);
+                
+                        if (count < iterations){
+                            printf("Há um número maior de iterações requisitadas do que o número de iteráveis, favor diminuir ou adicionar mais imagens\n");
+                            printf("Número de iterações requisitadas: %d", iterations);
+                            printf("Número de iteráveis: %d", count);
+                            free(paths);
+                            free(buffer);
+                            break;
+                        }
+                        /* ══════════════════════════════════════════
+                           4. Sorteia e abre as imagens
+                           ══════════════════════════════════════════ */
+                        srand((unsigned)time(NULL));
+                    
+                        printf("Iniciando benchmark (%d iteracoes)...\n\n", iterations);
+                    
+                        for (int i = 0; i < iterations; i++) {
+                            reset(hps_virtual); 
+                            int idx      = rand() % (RAND_MAX_IDX + 1);   /* 0 .. 10000     */
+                            int real_idx = idx % count;                    /* mapeia ao array */
+                        
+                            printf("[%3d] idx=%5d -> %s\n", i + 1, idx, paths[real_idx]);
+
+                            store_image(hps_virtual, paths[real_idx]);
+                            iniciar(hps_virtual);
+                            int result = get_resultado(hps_virtual);
+                            printf("%d", result);
+                        }
+                    
+                        printf("\nBenchmark concluido.\n");
+                    
+                        /* ══════════════════════════════════════════
+                           5. Libera memória
+                           ══════════════════════════════════════════ */
+                        free(paths);
+                        free(buffer);
+                        break;
+
+                    case 0:
+                        printf("Retornando..\n");
+                        break;
+
+                    default:
+                        printf("Opcao invalida! Tente novamente.\n");
+                 
+             
 
           
                printf("=== Resultados ===\n");
@@ -336,7 +639,7 @@ int main() {
 
                //           
                break;
-           }
+           
 
            // Outras opções
            case 4:
@@ -503,13 +806,11 @@ int main() {
                printf("\nOpção inválida. Tente novamente.\n");
                break;
            }
-       }
-   } while (loop==1);
+       
+    while (loop==1);
   
    // fechar(hps_virtual);
    printf("\nMapeamento encerrado.\n");
   
    return 0;
-}
-
 
