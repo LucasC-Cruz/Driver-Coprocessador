@@ -27,6 +27,7 @@ volatile uint32_t  *vga_done_ptr;
 #define RAND_MAX_IDX 10000
 #define OUTPUT_FILE  "assets/saida.csv"
 #define OUTPUT_FILE2  "assets/saida2.csv"
+#define OUTPUT_FILE3  "assets/saida3.csv"
 #define N 10
 
 void salvar_matriz_csv(int matriz[N][N], const char *caminho) {
@@ -437,6 +438,7 @@ int main(){
                         if (!paths || !valorEsperado) { perror("malloc"); free(buffer); return EXIT_FAILURE; }
                         
                         //carregando as linhas na estrutura de dado (array safadinho)
+                        //tem toda uma lógica aqui para cortar a string nos locais certos e separar as partes relevantes como o caminho e o valor esperado :)
                         int count = 0;
                         char *line = strtok(buffer, "\r\n");
                         while (line) {
@@ -488,11 +490,13 @@ int main(){
                             store_image(hps_virtual, paths[real_idx]);
                             
                             clock_gettime(CLOCK_MONOTONIC, &inicio2);
+
                             iniciar(hps_virtual);
-                            
+
                             clock_gettime(CLOCK_MONOTONIC, &fim2);
                             tempo = (fim2.tv_sec - inicio2.tv_sec) + (fim2.tv_nsec - inicio2.tv_nsec) / 1e9;
                             tempoPorInferencia[totalInferencias] = tempo;
+
                             totalInferencias+=1;
                             
                             
@@ -511,7 +515,6 @@ int main(){
                             
                         }
                         printf("\nBenchmark concluido.\n");
-                        printf("\nTotal de inferencias nesta merda: %d\n", totalInferencias);
 
                         fclose(saida2);
                        
@@ -534,6 +537,9 @@ int main(){
                         break;
                     
                     case 3:
+
+                    tempoTotal=0;
+                    totalInferencias=0;
                     
                         printf("Voce escolheu: Benchmark por pasta.\n");
 
@@ -551,7 +557,7 @@ int main(){
                         } while (digit < 0 || digit > 9);
                     
                         do {
-                            printf("Numero de iteracoes [100-300]: ");
+                            printf("Numero de iterações [100-300]: ");
                             scanf("%d", &iterations);
                         } while (iterations < 100 || iterations > 300);
                     
@@ -561,8 +567,21 @@ int main(){
                         /* ══════════════════════════════════════════
                            2. Carrega o .txt inteiro num buffer
                            ══════════════════════════════════════════ */
+
+                                                   
+                           //avaliar isto daqui
+                        int tempoPorInferencia[10000];
+
+
                         FILE *list_file = fopen(LIST_FILE, "r");
-                        if (!list_file) { perror("fopen"); return EXIT_FAILURE; }
+                                           
+                        //Dá um problema se o arquivo não existir
+                        //LEMBRAR DE CRIAR O ARQUIVO ANTEEESS
+                        FILE* saida3   = fopen(OUTPUT_FILE3, "r+");
+                        if (list_file == NULL || saida3 == NULL){
+                            printf("Erro ao abrir o arquivo!");
+                            return 1;
+                        }
                     
                         fseek(list_file, 0, SEEK_END);
                         size = ftell(list_file);
@@ -646,6 +665,8 @@ int main(){
                            ══════════════════════════════════════════ */
                         srand((unsigned)time(NULL));
                     
+                        fprintf(saida3, "Valor Esperado;Resultado;Latência;Ciclos\n");
+
                         printf("Iniciando benchmark (%d iteracoes)...\n\n", iterations);
                     
                         for (int i = 0; i < iterations; i++) {
@@ -657,17 +678,46 @@ int main(){
 
                             store_image(hps_virtual, paths[real_idx]);
                     
+                            clock_gettime(CLOCK_MONOTONIC, &inicio2);
                             iniciar(hps_virtual);
+                            clock_gettime(CLOCK_MONOTONIC, &fim2);
+
+                            tempo = (fim2.tv_sec - inicio2.tv_sec) + (fim2.tv_nsec - inicio2.tv_nsec) / 1e9;
+                            tempoPorInferencia[totalInferencias] = tempo;
+
+                            totalInferencias+=1;
+
                             int result = get_resultado(hps_virtual);
+                            
+                            fprintf(saida3, "%d;%d;%4f;%d\n", digit, result, tempo, totalClocks);
+
+
+                            if(digit!= result) erro += 1;
+                            //tem como extrair total inferido de cada número e quantos acertos
+                            matriz[digit][result]++;
+                            
+                            tempoTotal += tempo;
                         }
-                    
-                        printf("\nBenchmark concluido.\n");
-                    
-                        /* ══════════════════════════════════════════
-                           5. Libera memória
-                           ══════════════════════════════════════════ */
+                        fclose(saida3);
+                       
+                        salvar_matriz_csv(matriz, "assets/matrizConfusao3.csv");
+                        salvar_relatorio_acertos(matriz, "assets/acertos3.csv");
+                       
+                        acuracia = (double)(totalInferencias-erro)/totalInferencias;
+                        latencia = totalClocks * tempoClock;
+                        latenciaRealMedia = tempoTotal/totalInferencias;
+                        vazao = 1/(tempoTotal/totalInferencias);
+                     
+                        for (int i=0; i<totalInferencias; i++){
+                            a += pow((tempoPorInferencia[i] - latenciaRealMedia), 2);
+                        }
+                        desvioLatencia= sqrt(a/totalInferencias);
+                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "assets/metricas3.csv");
+                        /* ── 5. Libera memória ── */
                         free(paths);
                         free(buffer);
+                    
+                        printf("\nBenchmark concluido.\n");
                         break;
                     
 
@@ -676,7 +726,7 @@ int main(){
                         break;
 
                     default:
-                        printf("Opcao invalida! Tente novamente.\n");
+                        printf("Opção inválida! Tente novamente.\n");
                 }
             }  
                break;
