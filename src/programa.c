@@ -25,9 +25,9 @@ volatile uint32_t  *vga_done_ptr;
 #define LIST_FILE    "assets/arquivos_1_bin.txt"
 //definindo range máximo para sorteio
 #define RAND_MAX_IDX 10000
-#define OUTPUT_FILE  "assets/saida.csv"
-#define OUTPUT_FILE2  "assets/saida2.csv"
-#define OUTPUT_FILE3  "assets/saida3.csv"
+#define OUTPUT_FILE  "assets/Btotal/saida.csv"
+#define OUTPUT_FILE2  "assets/BSorteio/saida2.csv"
+#define OUTPUT_FILE3  "assets/BPasta/saida3.csv"
 #define N 10
 
 void salvar_matriz_csv(int matriz[N][N], const char *caminho) {
@@ -161,7 +161,13 @@ void salvar_metricas(double acuracia, double latencia,
 int main(){ 
  
    int matriz[N][N];
+   int matriz2[N][N];
+   int matriz3[N][N];
+
    memset(matriz, 0, sizeof(matriz));
+   memset(matriz2, 0, sizeof(matriz2));
+   memset(matriz3, 0, sizeof(matriz3));
+
    char* caminho_img_bin = "assets/image.bin";
    char* caminho_desenho = "assets/desenho.bin";
    bool done, busy, error;
@@ -326,8 +332,9 @@ int main(){
                     case 1:
                     
                         printf("Voce escolheu: Modo benchmark total.\n");
+
                         FILE* arquivo = fopen(LIST_FILE, "r");
-                        FILE* saida   = fopen(OUTPUT_FILE, "r+");
+                        FILE* saida   = fopen(OUTPUT_FILE, "w");
                         if (arquivo == NULL || saida == NULL){
                             printf("Erro ao abrir o arquivo!");
                             return 1;
@@ -350,8 +357,8 @@ int main(){
                          
                          
                             //pega resultado
-                            int result = get_resultado(hps_virtual);
-                            totalInferencias+=1;
+                            result = get_resultado(hps_virtual);
+                            totalInferencias++;
                             trim(linha);// tirar o \n que tá no arquivo
 
 
@@ -362,24 +369,30 @@ int main(){
 
                         fclose(arquivo);
 
-                        // ------------- PARTE DE ELABORAÇÃO DO LOG DE RESULTADO DA INFERÊNCIA ---------- // 
+                        // PARTE DE ELABORAÇÃO DO LOG DE RESULTADO DA INFERÊNCIA // 
                         // volta para o início sem fechar
                         fseek(saida, 0, SEEK_SET);
                         //descartar a primeira linha
                         fgets(linha, sizeof(linha), saida);
                         while(fgets(linha, sizeof(linha), saida) != NULL){
                             sscanf(linha, "%d;%d;%lf;%d",&val_esperado, &result, &tempo, &totalClocks);
-                            if(val_esperado != result)
-                                erro += 1;
+                            if(val_esperado != result) {
+                                printf("Erros!\n");
+                                erro++;
+                            }
                             //tem como extrair total inferido de cada número e quantos acertos
                             matriz[val_esperado][result]++;
                             tempoTotal += tempo;
                         }
                         fclose(saida);
                        
-                        salvar_matriz_csv(matriz, "assets/matrizConfusao.csv");
-                        salvar_relatorio_acertos(matriz, "assets/acertos.csv");
+                        salvar_matriz_csv(matriz, "assets/Btotal/matrizConfusao.csv");
+                        salvar_relatorio_acertos(matriz, "assets/Btotal/acertos.csv");
                        
+                        printf("Total de inferências: %d\n", totalInferencias);
+                        printf("Erros: %d", erro);
+                        printf("Tempo total: %lf", tempoTotal);
+                        
                         acuracia = (double)(totalInferencias-erro)/totalInferencias;
                         latencia = totalClocks * tempoClock;
                         latenciaRealMedia = tempoTotal/totalInferencias;
@@ -390,7 +403,7 @@ int main(){
                             a += pow((tempoPorInferencia[i] - latenciaRealMedia), 2);
                         }
                         desvioLatencia= sqrt(a/totalInferencias);
-                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "assets/metricas.csv");
+                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "assets/Btotal/metricas.csv");
                         
                         break;
                 
@@ -400,11 +413,14 @@ int main(){
                      
                         totalInferencias=0;
                         printf("Voce escolheu: Benchmark sorteado.\n");
-                        int tempoPorInferencia[10000];
+                        erro=0;
+
+                        memset(tempoPorInferencia, 0, sizeof(tempoPorInferencia));
+                        memset(matriz2, 0, sizeof(matriz2));
                         /* ── 1. Abre o .txt e lê tudo num buffer ── */
                         arquivo = fopen(LIST_FILE, "r");
                         //talvez dê um problema se o arquivo não existir
-                        FILE* saida2   = fopen(OUTPUT_FILE2, "r+");
+                        FILE* saida2   = fopen(OUTPUT_FILE2, "w");
                         if (arquivo == NULL || saida2 == NULL){
                             printf("Erro ao abrir o arquivo!");
                             return 1;
@@ -509,7 +525,7 @@ int main(){
 
                             if(valorEsperado[real_idx] != result) erro += 1;
                             //tem como extrair total inferido de cada número e quantos acertos
-                            matriz[valorEsperado[real_idx]][result]++;
+                            matriz2[valorEsperado[real_idx]][result]++;
                             
                             tempoTotal += tempo;
                             
@@ -518,8 +534,8 @@ int main(){
 
                         fclose(saida2);
                        
-                        salvar_matriz_csv(matriz, "assets/matrizConfusao2.csv");
-                        salvar_relatorio_acertos(matriz, "assets/acertos2.csv");
+                        salvar_matriz_csv(matriz2, "assets/BSorteio/matrizConfusao2.csv");
+                        salvar_relatorio_acertos(matriz2, "assets/BSorteio/acertos2.csv");
                        
                         acuracia = (double)(totalInferencias-erro)/totalInferencias;
                         latencia = totalClocks * tempoClock;
@@ -530,7 +546,7 @@ int main(){
                             a += pow((tempoPorInferencia[i] - latenciaRealMedia), 2);
                         }
                         desvioLatencia= sqrt(a/totalInferencias);
-                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "assets/metricas2.csv");
+                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "assets/BSorteio/metricas2.csv");
                         /* ── 5. Libera memória ── */
                         free(paths);
                         free(buffer);
@@ -540,8 +556,11 @@ int main(){
 
                     tempoTotal=0;
                     totalInferencias=0;
+                    erro=0;
+                    memset(matriz3, 0, sizeof(matriz3));
+                    memset(tempoPorInferencia, 0, sizeof(tempoPorInferencia));
                     
-                        printf("Voce escolheu: Benchmark por pasta.\n");
+                        printf("\nVoce escolheu: Benchmark por pasta.\n");
 
                         /* ══════════════════════════════════════════
                            1. Menu — dígito (0-9) e iterações (100-300)
@@ -570,14 +589,14 @@ int main(){
 
                                                    
                            //avaliar isto daqui
-                        int tempoPorInferencia[10000];
+                        //tempoPorInferencia[10000];
 
 
                         FILE *list_file = fopen(LIST_FILE, "r");
                                            
                         //Dá um problema se o arquivo não existir
                         //LEMBRAR DE CRIAR O ARQUIVO ANTEEESS
-                        FILE* saida3   = fopen(OUTPUT_FILE3, "r+");
+                        FILE* saida3   = fopen(OUTPUT_FILE3, "w");
                         if (list_file == NULL || saida3 == NULL){
                             printf("Erro ao abrir o arquivo!");
                             return 1;
@@ -694,14 +713,14 @@ int main(){
 
                             if(digit!= result) erro += 1;
                             //tem como extrair total inferido de cada número e quantos acertos
-                            matriz[digit][result]++;
+                            matriz3[digit][result]++;
                             
                             tempoTotal += tempo;
                         }
                         fclose(saida3);
                        
-                        salvar_matriz_csv(matriz, "assets/matrizConfusao3.csv");
-                        salvar_relatorio_acertos(matriz, "assets/acertos3.csv");
+                        salvar_matriz_csv(matriz3, "assets/BPasta/matrizConfusao3.csv");
+                        salvar_relatorio_acertos(matriz3, "assets/BPasta/acertos3.csv");
                        
                         acuracia = (double)(totalInferencias-erro)/totalInferencias;
                         latencia = totalClocks * tempoClock;
@@ -712,7 +731,7 @@ int main(){
                             a += pow((tempoPorInferencia[i] - latenciaRealMedia), 2);
                         }
                         desvioLatencia= sqrt(a/totalInferencias);
-                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "assets/metricas3.csv");
+                        salvar_metricas(acuracia, latencia, latenciaRealMedia, vazao, desvioLatencia, "assets/BPasta/metricas3.csv");
                         /* ── 5. Libera memória ── */
                         free(paths);
                         free(buffer);
@@ -906,22 +925,4 @@ int main(){
   
    return 0;
 }
-/*O acarajé clássico leva massa de feijão fradinho, cebola e sal, batida para ficar aerada e frita em azeite de dendê quente.
-É servido cortado ao meio e recheado com vatapá, caruru, camarão seco e vinagrete.
-Ingredientes da Massa 500 g de feijão-fradinho1
-cebola média 
-picada1 colher (chá) de sal a gosto
-Óleo de dendê para fritar (cerca de 500 ml a 1 litro)
-Modo de Preparo 
-Demolho: Coloque o feijão-fradinho em uma tigela, cubra com água e deixe de molho por pelo menos 6 horas ou de um dia para o outro.
-Descasque: Esfregue os grãos de feijão entre as mãos ou bata levemente no liquidificador para quebrar e soltar as cascas.
-Retire todas as cascas lavando em água corrente e remova o "olhinho" preto do feijão.
-Bater: Escorra bem o feijão. Coloque-o no liquidificador (ou processador) junto com a cebola e o sal.
-Bata até obter uma massa espessa e homogênea.Aerar: Transfira a massa para uma tigela e bata vigorosamente com uma colher de pau em movimentos circulares de baixo para cima.
-Esse passo é fundamental para incorporar ar e deixar o acarajé macio e aerado.Fritura: Aqueça uma quantidade generosa de azeite de dendê em uma panela funda.
-Para evitar que o dendê queime muito, coloque um pedaço de cebola no óleo.
-Modele os bolinhos com a ajuda de duas colheres e frite-os no dendê quente até dourarem de ambos os lados.
-Finalização: Retire os bolinhos e coloque-os sobre papel-toalha para absorver o excesso de gordura.
-*/
-
 
