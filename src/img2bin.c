@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "img2bin.h" // Inclui o seu próprio cabeçalho
+#include "img2bin.h"
 #include <math.h>
 
-// IMPORTANTE: O #define STB_IMAGE_IMPLEMENTATION fica APENAS AQUI!
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -13,8 +12,8 @@ int png2bin(const char *input_filename) {
     unsigned char *img_data = stbi_load(input_filename, &width, &height, &channels_in_file, 1);
 
     if (img_data == NULL) {
-        
         return 1;}
+        
     if (width != 28 || height != 28) {
         stbi_image_free(img_data);
 
@@ -36,6 +35,6 @@ int png2bin(const char *input_filename) {
 
     if (written != bytes_to_write) return 4;
 
-    return 0; // Sucesso
+    return 0;
 }
 

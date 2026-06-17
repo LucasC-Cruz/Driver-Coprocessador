@@ -13,14 +13,12 @@
 #include "vga.h" 
 #include "pio.h" 
 
-
-// Configurações lógicas da imagem e renderização
 #define IMG_SIZE 28
 #define SCALE_FACTOR 8  
-#define OFFSET_X 48//((320 - (IMG_SIZE * SCALE_FACTOR)) / 2) 
-#define OFFSET_Y 8//((240 - (IMG_SIZE * SCALE_FACTOR)) / 2)
+#define OFFSET_X 48 
+#define OFFSET_Y 8
 
-// Renderiza o macro-pixel (bloco de 8x8) na VGA
+
 static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y, bool desenhando) {
     uint32_t vga_x, vga_y, novo_pixel_tela;
     
@@ -35,14 +33,18 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
         mini = -1;
     }
 
+    //loops para fazer o pincel 3 por 3
     for (int i = -1; i < 2; i++) {
         for (int j = -1; j < 2; j++) {
             int vizinho_x = img_x + i;
             int vizinho_y = img_y + j;
+
+            //evita acesssar pixels fora da tela
             if ((vizinho_x < 0 || vizinho_x >= IMG_SIZE || vizinho_y < 0 || vizinho_y >= IMG_SIZE)) {
                 continue;
             }
-            //calculo do valor dos pixeis vizinhos
+
+            //decidi o valor dos pixeis vizinhos
             if (i == 0 && j == 0) {
                 novo_pixel_tela = maxi;
             } else if ((i == 0 && (j == -1 || j == 1)) || (j == 0 && (i == -1 || i == 1))) {
@@ -61,10 +63,10 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
                 n = 0;
             }
 
-            //pra não acessar fora da tela de desenho
+            //atualiza a matriz de desenho com o tom correto
             tela_desenho[img_y+j][img_x+i] = n;
 
-            //loop pra pintar todos os pixeis do vga
+            // loops para pintar cada bloco de 8 por 8 (correspondete a 1 pixel da imagem)
             for (int e_y = 0; e_y < SCALE_FACTOR; e_y++) {
                 for (int e_x = 0; e_x < SCALE_FACTOR; e_x++) {
                     vga_x = OFFSET_X + ((vizinho_x) * SCALE_FACTOR) + e_x;
@@ -81,10 +83,15 @@ static void selecao_cursor(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, 
     uint32_t vga_x, vga_y;
     int n = tela_desenho[img_y][img_x];
 
+    //loop pro bloco 8 por 8
     for (int e_y = 0; e_y < SCALE_FACTOR; e_y++) {
         for (int e_x = 0; e_x < SCALE_FACTOR; e_x++) {
+            
+            //pegando os indices dos pixeis no vga
             vga_x = OFFSET_X + (img_x * SCALE_FACTOR) + e_x;
             vga_y = OFFSET_Y + (img_y * SCALE_FACTOR) + e_y;
+            
+            //pinta só as bordas, pra fazer um curos bunitim
             if (((e_x == 0) || (e_x == 7) || (e_y == 0) || (e_y == 7))){
                 enviar_pixel(vga_x, vga_y, r, g, b);
             } else {enviar_pixel(vga_x, vga_y, n, n, n);}
@@ -93,10 +100,12 @@ static void selecao_cursor(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, 
     }
 }
 
-// Restaura a cor de fundo ou tinta original da matriz
+// restaura o pixel original da matriz, usado quando o cursor muda de posição
 static void restaurar_bloco_original(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_y) {
+    //n recebe o tom certo
     int n = tela_desenho[img_y][img_x];
 
+    //pinta tudo de novo
     for (int e_y = 0; e_y < SCALE_FACTOR; e_y++) {
         for (int e_x = 0; e_x < SCALE_FACTOR; e_x++) {
             uint32_t vga_x = OFFSET_X + (img_x * SCALE_FACTOR) + e_x;
@@ -106,7 +115,7 @@ static void restaurar_bloco_original(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], i
     }
 }
 
-// Função de salvamento em arquivo binário bruto
+// salvando em arquivo binário
 static void salvar_imagem_bin(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE]) {
     printf("\n\nSalvando imagem em 'assets/desenho.bin'...");
     FILE *file_ptr = fopen("assets/desenho.bin", "wb");
@@ -135,7 +144,6 @@ int executar_painel_desenho_vga(void *hps_virtual) {
     int fd;
 
     //struct já definida pelo linux
-    ///gera input_event={time,type,code,value}, que descreve inputs do mouse
     struct input_event evento;
     ssize_t pacote;
 
@@ -162,7 +170,6 @@ int executar_painel_desenho_vga(void *hps_virtual) {
 
     bool desenhando=0;
     bool apagando=0;
-
     
     while (1) { 
 
@@ -175,8 +182,10 @@ int executar_painel_desenho_vga(void *hps_virtual) {
             return EXIT_FAILURE;
         }
         
+        //salvando anterior, necessario para restaurar pixel sobrescrito pelo cursor
         prev_x = cursor_x;
         prev_y = cursor_y;
+
         //incrementando a posição do cursor com base no deslocamento 
        if (evento.type == EV_REL) {
             if (evento.code == REL_X) {
@@ -188,9 +197,7 @@ int executar_painel_desenho_vga(void *hps_virtual) {
                 else if (evento.value <= 1) cursor_y--;
             }
         }
-        
-        //salvando anterior, necessario para restaurar pixel sobrescrito pelo cursor
-        
+                
         // Processa eventos de botões
         if (evento.type == EV_KEY) {
             if (evento.code == BTN_LEFT) {
@@ -212,9 +219,7 @@ int executar_painel_desenho_vga(void *hps_virtual) {
             }
         }
         
-        
         //definindo os limtes de onde o cursor pode ir
-
         if (cursor_x < 0) cursor_x = 0;
         if (cursor_x >= IMG_SIZE) cursor_x = IMG_SIZE - 1;
         if (cursor_y < 0) cursor_y = 0;

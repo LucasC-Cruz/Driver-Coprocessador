@@ -11,12 +11,13 @@
 
 // Definições do formato da imagem original
 #define IMG_SIZE 28
-#define TOTAL_BYTES 784 // 28 * 28
+#define TOTAL_BYTES 784
 
-// Configuração de dimensionamento para visualização na tela de 320x240
-#define SCALE_FACTOR 8  // Cada pixel vira um bloco de 8x8 (28 * 8 = 224 pixels na tela)
-#define OFFSET_X ((320 - (IMG_SIZE * SCALE_FACTOR)) /2) // Centraliza horizontalmente (48)
-#define OFFSET_Y ((240 - (IMG_SIZE * SCALE_FACTOR)) /2) // Centraliza verticalmente (8)
+//tamanho do pixel da imagem no vga
+#define SCALE_FACTOR 8  
+// Centraliza a imagem
+#define OFFSET_X ((320 - (IMG_SIZE * SCALE_FACTOR)) /2) 
+#define OFFSET_Y ((240 - (IMG_SIZE * SCALE_FACTOR)) /2)
 
 void enviar_pixel(uint32_t x, uint32_t y, uint32_t r, uint32_t g, uint32_t b) {
     uint32_t pixel_cmd = x | (y << 9) | (r << 17) | (g << 20) | (b << 23);
@@ -61,20 +62,19 @@ int exibir_imagem(void *virtual_base, const char *imagem) {
         }
     }
 
-    // --- PASSO 4: EXIBIR A IMAGEM COM REDIMENSIONAMENTO E POLLING DE DONE ---
+    // exibindo a imagem
     for (int img_y = 0; img_y < IMG_SIZE; img_y++) {
 
         for (int img_x = 0; img_x < IMG_SIZE; img_x++) {
             
-            // Calcula o índice linear correspondente no arquivo binário de 784 bytes
+            // Calcula o índice correspondente no arquivo binário de 784 bytes
             int indice_pixel = (img_y * IMG_SIZE) + img_x;
             uint8_t pixel_original = buffer_imagem[indice_pixel];
             
             // Converte a escala de tons de cinza de 8 bits (0-255) para 3 bits (0-7)
-            // Caso sua imagem já seja binária pura com valores de 0 a 7, use apenas: tom = pixel_original;
             uint32_t tom = pixel_original >> 5; 
             
-            // Replicação de pixel (Upscaling por software enviando blocos de SCALE_FACTOR x SCALE_FACTOR)
+            // upscale, cada pixel é desenhado em blocos de 8 por 8 pixels no vga
             for (int e_y = 0; e_y < SCALE_FACTOR; e_y++) {
                 
                 for (int e_x = 0; e_x < SCALE_FACTOR; e_x++) {
@@ -82,7 +82,6 @@ int exibir_imagem(void *virtual_base, const char *imagem) {
                     uint32_t vga_x = OFFSET_X + (img_x * SCALE_FACTOR) + e_x;
                     uint32_t vga_y = OFFSET_Y + (img_y * SCALE_FACTOR) + e_y;
                     
-                    // Envia garantindo que a FPGA terminou o ciclo anterior
                     enviar_pixel(vga_x, vga_y, tom, tom, tom);
                 }
             }

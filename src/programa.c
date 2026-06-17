@@ -668,7 +668,7 @@ int main(){
                         fprintf(saida3, "Valor Esperado;Resultado;Latência;Ciclos\n");
 
                         printf("Iniciando benchmark (%d iteracoes)...\n\n", iterations);
-                    
+                        //como tá sua rinite, Professor? Espero que tenha melhorado!
                         for (int i = 0; i < iterations; i++) {
                             reset(hps_virtual); 
                             int idx      = rand() % (RAND_MAX_IDX + 1);   /* 0 .. 10000     */
