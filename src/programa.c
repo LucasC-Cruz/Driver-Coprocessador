@@ -906,4 +906,22 @@ int main(){
   
    return 0;
 }
+/*O acarajé clássico leva massa de feijão fradinho, cebola e sal, batida para ficar aerada e frita em azeite de dendê quente.
+É servido cortado ao meio e recheado com vatapá, caruru, camarão seco e vinagrete.
+Ingredientes da Massa 500 g de feijão-fradinho1
+cebola média 
+picada1 colher (chá) de sal a gosto
+Óleo de dendê para fritar (cerca de 500 ml a 1 litro)
+Modo de Preparo 
+Demolho: Coloque o feijão-fradinho em uma tigela, cubra com água e deixe de molho por pelo menos 6 horas ou de um dia para o outro.
+Descasque: Esfregue os grãos de feijão entre as mãos ou bata levemente no liquidificador para quebrar e soltar as cascas.
+Retire todas as cascas lavando em água corrente e remova o "olhinho" preto do feijão.
+Bater: Escorra bem o feijão. Coloque-o no liquidificador (ou processador) junto com a cebola e o sal.
+Bata até obter uma massa espessa e homogênea.Aerar: Transfira a massa para uma tigela e bata vigorosamente com uma colher de pau em movimentos circulares de baixo para cima.
+Esse passo é fundamental para incorporar ar e deixar o acarajé macio e aerado.Fritura: Aqueça uma quantidade generosa de azeite de dendê em uma panela funda.
+Para evitar que o dendê queime muito, coloque um pedaço de cebola no óleo.
+Modele os bolinhos com a ajuda de duas colheres e frite-os no dendê quente até dourarem de ambos os lados.
+Finalização: Retire os bolinhos e coloque-os sobre papel-toalha para absorver o excesso de gordura.
+*/
+
 
