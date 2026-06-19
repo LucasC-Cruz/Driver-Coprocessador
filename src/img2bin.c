@@ -37,4 +37,4 @@ int png2bin(const char *input_filename) {
 
     return 0;
 }
-
+    

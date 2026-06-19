@@ -312,7 +312,7 @@ int main(){
             int val_esperado;
             int result, erro=0;
             double acuracia, latencia, desvioLatencia, vazao, tempo;
-            int tempoPorInferencia[10000];
+            double tempoPorInferencia[10000];
             double tempoTotal;
             float tempoClock = 0.000000002; //considerando 50 Mhz
             float latenciaRealMedia;
@@ -330,11 +330,17 @@ int main(){
                 switch (opcao)
                 {
                     case 1:
+                        totalInferencias=0;
+                        printf("Voce escolheu: Benchmark sorteado.\n");
+                        erro=0;
+
+                        memset(tempoPorInferencia, 0, sizeof(tempoPorInferencia));
+                        memset(matriz, 0, sizeof(matriz));
                     
                         printf("Voce escolheu: Modo benchmark total.\n");
 
                         FILE* arquivo = fopen(LIST_FILE, "r");
-                        FILE* saida   = fopen(OUTPUT_FILE, "w");
+                        FILE* saida   = fopen(OUTPUT_FILE, "w+");
                         if (arquivo == NULL || saida == NULL){
                             printf("Erro ao abrir o arquivo!");
                             return 1;
@@ -376,12 +382,13 @@ int main(){
                         fgets(linha, sizeof(linha), saida);
                         while(fgets(linha, sizeof(linha), saida) != NULL){
                             sscanf(linha, "%d;%d;%lf;%d",&val_esperado, &result, &tempo, &totalClocks);
+                            printf("val: %d, result: %d\n", val_esperado, result);
+
                             if(val_esperado != result) {
-                                printf("Erros!\n");
                                 erro++;
                             }
                             //tem como extrair total inferido de cada número e quantos acertos
-                            matriz[val_esperado][result]++;
+                            matriz[val_esperado][result]++; 
                             tempoTotal += tempo;
                         }
                         fclose(saida);
@@ -417,6 +424,7 @@ int main(){
 
                         memset(tempoPorInferencia, 0, sizeof(tempoPorInferencia));
                         memset(matriz2, 0, sizeof(matriz2));
+
                         /* ── 1. Abre o .txt e lê tudo num buffer ── */
                         arquivo = fopen(LIST_FILE, "r");
                         //talvez dê um problema se o arquivo não existir
@@ -519,7 +527,7 @@ int main(){
                             int result = get_resultado(hps_virtual);
             
                     
-
+                            
                             fprintf(saida2, "%d;%d;%4f;%d\n", valorEsperado[real_idx], result, tempo, totalClocks);
 
 

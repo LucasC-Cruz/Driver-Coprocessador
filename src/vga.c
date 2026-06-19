@@ -91,4 +91,3 @@ int exibir_imagem(void *virtual_base, const char *imagem) {
 
     return 0;
 }
-

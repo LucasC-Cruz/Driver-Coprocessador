@@ -1,0 +1,2 @@
+Valor Esperado;Resultado;Latência;Ciclos
+8;8;0.016750;1149508

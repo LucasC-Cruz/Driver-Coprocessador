@@ -25,11 +25,11 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
     int maxi, meio, mini;
     if (desenhando) {
         maxi = 5;
-        meio = 2;
+        meio = 1;
         mini = 1;
     } else {
         maxi = -7;
-        meio = -2;
+        meio = -1;
         mini = -1;
     }
 
@@ -44,7 +44,7 @@ static void pincel(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, int img_
                 continue;
             }
 
-            //decidi o valor dos pixeis vizinhos
+            //decide o valor dos pixeis vizinhos
             if (i == 0 && j == 0) {
                 novo_pixel_tela = maxi;
             } else if ((i == 0 && (j == -1 || j == 1)) || (j == 0 && (i == -1 || i == 1))) {
@@ -91,10 +91,10 @@ static void selecao_cursor(uint8_t tela_desenho[IMG_SIZE][IMG_SIZE], int img_x, 
             vga_x = OFFSET_X + (img_x * SCALE_FACTOR) + e_x;
             vga_y = OFFSET_Y + (img_y * SCALE_FACTOR) + e_y;
             
-            //pinta só as bordas, pra fazer um curos bunitim
+            //pinta só as bordas, pra fazer um cursor bunitim
             if (((e_x == 0) || (e_x == 7) || (e_y == 0) || (e_y == 7))){
                 enviar_pixel(vga_x, vga_y, r, g, b);
-            } else {enviar_pixel(vga_x, vga_y, n, n, n);}
+            } else {enviar_pixel(vga_x, vga_y, n, n, n);} //repinta o resto com a cor do desenho pq o vga é meio bugado e fica criando pixel fantasma onde n deve
             
         }
     }
@@ -241,4 +241,3 @@ int executar_painel_desenho_vga(void *hps_virtual) {
         
     }
 }
-
