@@ -318,4 +318,6 @@ Os três modos de benchmark já possuem resultados registrados em `assets/` a pa
 
 **Observação sobre acurácia:** a diferença entre a latência teórica (baseada na contagem de clocks do hardware) e a latência real média sugere que parte do tempo medido em software é dominado por overhead do driver (chamadas de sistema, leitura de arquivo a cada imagem) e não apenas pelo tempo de computação da FPGA.
 
+<img src="assets/experimento1" alt="Resultado" width="500">
+
 </details>
