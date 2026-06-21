@@ -272,7 +272,9 @@ Submenu de baixo nível para depuração manual do driver: resetar o coprocessad
 <details>
 <summary><h2>8. Análise dos Resultados</h2></summary>
 
-LINK PARA SLIDE: https://docs.google.com/presentation/d/1NIGzjEhVZVlr4j5ys-Hxj6DoKCVKzw56rjIRBb6FDaM/edit?slide=id.g3ec6ca3519e_4_6#slide=id.g3ec6ca3519e_4_6
+**LINK PARA SLIDE: https://docs.google.com/presentation/d/1NIGzjEhVZVlr4j5ys-Hxj6DoKCVKzw56rjIRBb6FDaM/edit?slide=id.g3ec6ca3519e_4_6#slide=id.g3ec6ca3519e_4_6
+
+
 Os três modos de benchmark já possuem resultados registrados em `assets/` a partir de execuções na placa:
 
 **Benchmark total** (`assets/Btotal/`, dataset completo): acurácia geral de **66,61%**, vazão de **≈59,7 inferências/segundo** e latência média real de **≈16,8 ms** por inferência (latência teórica estimada pelos clocks de hardware: **≈2,3 ms**). A acurácia varia bastante por classe — dígitos como `1` (86,61%) e `7` (78,50%) são bem reconhecidos, enquanto `5` (14,46%) concentra a maior parte dos erros, sendo frequentemente confundido com `3` e `8` segundo a matriz de confusão.
