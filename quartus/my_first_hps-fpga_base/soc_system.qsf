@@ -7,7 +7,7 @@ set_global_assignment -name FAMILY "Cyclone V"
 set_global_assignment -name DEVICE 5CSEMA5F31C6
 set_global_assignment -name TOP_LEVEL_ENTITY "ghrd_top"
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 13
-set_global_assignment -name LAST_QUARTUS_VERSION "23.1std.0 Lite Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "25.1std.0 Lite Edition"
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "MON JUN 17 20:35:29 2013"
 set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
 
@@ -988,6 +988,20 @@ set_instance_assignment -name GLOBAL_SIGNAL OFF -to u0|hps_0|hps_io|border|hps_s
 set_instance_assignment -name GLOBAL_SIGNAL OFF -to u0|hps_0|hps_io|border|hps_sdram_inst|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[3] -tag __hps_sdram_p0
 set_instance_assignment -name ENABLE_BENEFICIAL_SKEW_OPTIMIZATION_FOR_NON_GLOBAL_CLOCKS ON -to u0|hps_0|hps_io|border|hps_sdram_inst -tag __hps_sdram_p0
 set_instance_assignment -name PLL_COMPENSATION_MODE DIRECT -to u0|hps_0|hps_io|border|hps_sdram_inst|pll0|fbout -tag __hps_sdram_p0
+set_global_assignment -name SOURCE_FILE pll01/pll01.cmp
+set_global_assignment -name QIP_FILE pll01/pll01.qip
+set_global_assignment -name SIP_FILE pll01/pll01.sip
+set_global_assignment -name SOURCE_FILE pll01/pll01.spd
+set_global_assignment -name VERILOG_FILE pll01/pll01.v
+set_global_assignment -name QIP_FILE pll01/pll01_0002.qip
+set_global_assignment -name VERILOG_FILE pll01/pll01_0002.v
+set_global_assignment -name SOURCE_FILE pll01/pll01_sim.f
+set_global_assignment -name VERILOG_FILE modulo_vga/vga_driver.v
+set_global_assignment -name VERILOG_FILE modulo_vga/controller_vga_to_sd.v
+set_global_assignment -name MIF_FILE memorias/imagem_4.mif
+set_global_assignment -name MIF_FILE memorias/W_in_q.mif
+set_global_assignment -name MIF_FILE memorias/beta_q.mif
+set_global_assignment -name MIF_FILE memorias/b_q.mif
 set_global_assignment -name SYSTEMVERILOG_FILE soc_system_mm_interconnect_0_avalon_st_adapter_error_adapter_0.sv
 set_global_assignment -name SYSTEMVERILOG_FILE soc_system_mm_interconnect_0_avalon_st_adapter_001_error_adapter_0.sv
 set_global_assignment -name SYSTEMVERILOG_FILE altera_mem_if_oct_cyclonev.sv

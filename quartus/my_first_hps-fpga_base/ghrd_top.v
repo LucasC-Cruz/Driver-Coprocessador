@@ -333,6 +333,8 @@ soc_system u0 (
     .pio_flag_done_external_connection_export   (flag_done),   //   pio_flag_done_external_connection.export
     .pio_flag_error_external_connection_export  (flag_error),  //  pio_flag_error_external_connection.export
 	 .confirmar_external_connection_export       (confirmar),       //       confirmar_external_connection.export
+	 .vga_data_hps_export                        (vga_data_hps),                         //                        vga_data_hps.export
+	 .vga_done_export 												(vga_done)
 	 
     
 );
@@ -365,6 +367,35 @@ CoProcessor coprocesssador_de_maike(
     .clr_operation(clr_op),
     .rst(reset_cop),
     .data_out(data_out)
+);
+
+/*
+      em progresso:
+*/
+
+wire [31:0] vga_data_hps; // Fio vindo do PIO que você configurou no Qsys
+wire vga_done;
+
+controller_vga_to_sd vga_block(
+    .posx    (vga_data_hps[8:0]),
+    .posy    (vga_data_hps[16:9]),
+    .red     (vga_data_hps[19:17]),
+    .green   (vga_data_hps[22:20]),
+    .blue    (vga_data_hps[25:23]),
+    .enable  (vga_data_hps[26]),
+    .clk     (CLOCK_50),
+    .rst     (~hps_fpga_reset_n),
+    
+    // Conexões diretas com os pinos físicos da DE1-SoC expostos no ghrd_top
+    .hs      (VGA_HS),
+    .vs      (VGA_VS),
+    .sync    (VGA_SYNC_N),
+    .blank   (VGA_BLANK_N),
+    .vga_clk (VGA_CLK),
+    .vga_red (VGA_R),
+    .vga_green(VGA_G),
+    .vga_blue(VGA_B),
+    .done    (vga_done)
 );
 
   
