@@ -243,6 +243,15 @@ Na inicialização o programa mapeia a memória, mapeia os PIOs de VGA, e carreg
 
 Solicita o caminho de um PNG 28×28 em escala de cinza, converte-o automaticamente para binário (`img2bin`), envia a imagem para o coprocessador, exibe-a no monitor VGA e roda a inferência. O usuário informa o valor esperado e o programa indica se houve acerto, além das flags de `done`/`busy`/`error` e do número estimado de clocks da operação.
 
+**Como a imagem chega ao VGA (`exibir_imagem`, em `vga.c`):**
+
+- `img2bin` decodifica o PNG (via `stb_image.h`) e grava os 784 bytes crus, sem cabeçalho, em `assets/image.bin`.
+- `exibir_imagem` lê esses 784 bytes para um buffer e primeiro limpa a tela inteira (320×240) pintando todos os pixels de preto.
+- Em seguida percorre os 28×28 pixels da imagem; cada valor de 8 bits (0–255) é reduzido para 3 bits (0–7) com `pixel >> 5`, faixa aceita pelos canais R/G/B do PIO de VGA.
+- Cada pixel original é ampliado num bloco de 8×8 pixels reais na tela (`SCALE_FACTOR`), com a imagem centralizada via `OFFSET_X`/`OFFSET_Y` (calculados a partir da resolução 320×240).
+- Para cada pixel do bloco, `enviar_pixel` monta a palavra de comando (posição + RGB + bit de enable) e espera a flag `PIO_VGA_DONE` subir antes de enviar o próximo — é um laço bloqueante, pixel a pixel.
+- `store_image` (envio ao coprocessador) e `exibir_imagem` (exibição) leem o mesmo arquivo `assets/image.bin` 
+
 ### 7.3 Inferência via desenho no VGA (Opção 2)
 
 Abre um painel de desenho 28×28 renderizado no monitor VGA, controlado pelo mouse:
@@ -250,6 +259,31 @@ Abre um painel de desenho 28×28 renderizado no monitor VGA, controlado pelo mou
 - **Botão esquerdo:** desenha (incrementa o tom dos pixels sob o cursor);
 - **Botão direito:** apaga (decrementa o tom dos pixels sob o cursor);
 - **Botão do meio (scroll):** salva o desenho em `assets/desenho.bin`, encerra o painel e dispara a inferência automaticamente.
+
+**Construção da imagem desenhada:**
+
+- Existe uma matriz `tela_desenho[28][28]` em memória, espelhando o que está na tela: cada posição guarda um tom de 0 a 7.
+- Cada interação do mouse altera essa matriz e repinta apenas os blocos 8×8 afetados no VGA — não há redesenho da tela inteira a cada movimento.
+
+**Como funciona o pincel (`pincel`, em `mouse.c`):**
+
+- Atua numa vizinhança 3×3 ao redor da célula do cursor.
+- Desenhando: o pixel central recebe **+5**, os 4 vizinhos ortogonais **+1** e os 4 diagonais **+1**.
+- Apagando: o central recebe **-7**, ortogonais e diagonais **-1** cada.
+- O resultado de cada célula é limitado (clamp) entre 0 e 7 antes de ser gravado na matriz e repintado na tela, evitando overflow/underflow do tom.
+- Um cursor colorido é desenhado só nas bordas do bloco 8×8 atual (`selecao_cursor`); ao mover, o bloco anterior é restaurado com o tom real salvo na matriz (`restaurar_bloco_original`), já que o destaque do cursor sobrescreve o pixel original.
+
+**Leitura do mouse (`executar_painel_desenho_vga`):**
+
+- Abre `/dev/input/event0` em modo somente leitura e entra num loop bloqueante lendo pacotes `struct input_event`.
+- Eventos `EV_REL` (`REL_X`/`REL_Y`) movem o cursor em ±1 célula da matriz por pacote recebido, independente da magnitude do deslocamento real do mouse.
+- Eventos `EV_KEY`: `BTN_LEFT` liga/desliga o modo desenho, `BTN_RIGHT` liga/desliga o modo apagar, `BTN_MIDDLE` dispara o salvamento e encerra o painel.
+- A posição do cursor é sempre travada dentro dos limites `[0, 27]` da matriz antes de qualquer pintura.
+
+**Como é salva em binário (`salvar_imagem_bin`):**
+
+- Ao acionar o botão do meio, cada célula da matriz (escala 0–7) é convertida de volta para 8 bits: o valor `7` se torna exatamente `255`; os demais são multiplicados por `36`.
+- Os 784 valores resultantes são escritos sequencialmente, linha a linha, em `assets/desenho.bin` — o mesmo formato binário de 784 bytes consumido tanto por `store_image` (hardware) quanto por `exibir_imagem` (VGA).
 
 ### 7.4 Benchmark (Opção 3)
 
@@ -271,9 +305,6 @@ Submenu de baixo nível para depuração manual do driver: resetar o coprocessad
 
 <details>
 <summary><h2>8. Análise dos Resultados</h2></summary>
-
-**LINK PARA SLIDE: https://docs.google.com/presentation/d/1NIGzjEhVZVlr4j5ys-Hxj6DoKCVKzw56rjIRBb6FDaM/edit?slide=id.g3ec6ca3519e_4_6#slide=id.g3ec6ca3519e_4_6
-
 
 Os três modos de benchmark já possuem resultados registrados em `assets/` a partir de execuções na placa:
 
