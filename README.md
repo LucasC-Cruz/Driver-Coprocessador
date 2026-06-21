@@ -320,10 +320,10 @@ Os três modos de benchmark já possuem resultados registrados em `assets/` a pa
 
 <div align="center">
   <figure>
-    <img src="assets0/experimento1.png" width="600px"/>
+    <img src="assets/experimento1.png" width="600px"/>
     <figcaption>
       <p align="center">
-        <b>Figura 2</b> - Formato da instrução Store Image
+        <b>Figura 1</b> - Resultados benchmark aleatório 10000 imagens
       </p>
     </figcaption>
   </figure>
